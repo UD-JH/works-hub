@@ -1,0 +1,28 @@
+{
+  "tools": [
+    {
+      "id": "collector",
+      "name": "이미지 콜렉터",
+      "desc": "이미지 수집, 선택, 정리",
+      "color": "#ff6b6b",
+      "version": "v1.0",
+      "url": "/tools/collector/index.html"
+    },
+    {
+      "id": "converter",
+      "name": "이미지 컨버터",
+      "desc": "포맷 변환, 리사이즈",
+      "color": "#ffa94d",
+      "version": "v1.0",
+      "url": "/tools/converter/index.html"
+    },
+    {
+      "id": "dashboard",
+      "name": "작품 대시보드",
+      "desc": "매출, 팬수, 트렌드 분석",
+      "color": "#43e09f",
+      "version": "v1.0",
+      "url": "/tools/dashboard/index.html"
+    }
+  ]
+}

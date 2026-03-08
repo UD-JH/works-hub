@@ -1,0 +1,11 @@
+{
+  "workflows": [
+    {
+      "id": "rename",
+      "name": "이름 일괄 변경",
+      "desc": "폴더 열기 → 선택 → 이름 변경 → 저장",
+      "color": "#6c63ff",
+      "updatedAt": "3일 전"
+    }
+  ]
+}

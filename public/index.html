@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Works Hub</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+
+  <!-- 네비게이션 -->
+  <nav class="navbar">
+    <div class="nav-logo">WORKS HUB</div>
+    <div class="nav-links">
+      <a href="#">허브</a>
+      <a href="#">워크플로우</a>
+      <a href="#">모듈</a>
+    </div>
+  </nav>
+
+  <!-- 메인 콘텐츠 -->
+  <main class="main">
+    <h1 class="hero-title">WORKS HUB</h1>
+    <p class="hero-sub">도구와 워크플로우를 한 곳에서</p>
+
+    <!-- 도구 섹션 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-title">도구</span>
+      </div>
+      <div class="card-grid" id="toolGrid">
+        <!-- tools/index.json 에서 동적으로 생성됩니다 -->
+      </div>
+    </section>
+
+    <!-- 워크플로우 섹션 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-title">워크플로우</span>
+      </div>
+      <div class="card-grid" id="workflowGrid">
+        <!-- workflows/index.json 에서 동적으로 생성됩니다 -->
+      </div>
+    </section>
+  </main>
+
+  <script src="scripts/hub.js"></script>
+</body>
+</html>
