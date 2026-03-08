@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>워크플로우 빌더</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    .builder {
+      display: grid;
+      grid-template-columns: 200px 1fr 260px;
+      height: calc(100vh - 49px);
+      overflow: hidden;
+    }
+    .palette {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 12px 8px;
+    }
+    .palette::-webkit-scrollbar { width: 3px; }
+    .palette::-webkit-scrollbar-thumb { background: var(--border); }
+    .palette-sec { margin-bottom: 16px; }
+    .palette-ttl {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 6px;
+      margin-bottom: 6px;
+    }
+    .palette-mod {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: grab;
+      border: 1px solid transparent;
+      transition: all .15s;
+      margin-bottom: 3px;
+    }
+    .palette-mod:hover { background: var(--card); border-color: var(--border); }
+    .palette-mod:active { cursor: grabbing; }
+    .mod-ico {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .mod-info { min-width: 0; }
+    .mod-name { font-size: 11px; font-weight: 500; }
+    .mod-tag { font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: var(--muted); }
+    .canvas-wrap {
+      position: relative;
+      overflow: hidden;
+      background-image: radial-gradient(circle, rgba(255,255,255,.018) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .canvas-top {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 20;
+    }
+    .wf-name-input {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      background: rgba(10,10,13,.9);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      color: var(--text);
+      outline: none;
+    }
+    .canvas-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-save { background: var(--acc); color: #fff; }
+    .btn-save:hover { filter: brightness(1.15); }
+    .btn-run { background: var(--acc2); color: #0a0a0d; font-weight: 600; }
+    .btn-run:hover { filter: brightness(1.1); }
+    .canvas-hint {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      background: rgba(10,10,13,.8);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 14px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .canvas-empty {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .canvas-empty-icon { font-size: 28px; opacity: .2; margin-bottom: 8px; }
+    .canvas-empty-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      opacity: .4;
+      line-height: 1.8;
+    }
+    .bnode {
+      position: absolute;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      width: 150px;
+      cursor: move;
+      transition: border-color .15s, box-shadow .15s;
+      user-select: none;
+      z-index: 10;
+    }
+    .bnode:hover, .bnode.sel {
+      border-color: var(--acc);
+      box-shadow: 0 0 0 3px rgba(108,99,255,.1);
+    }
+    .bnode-hd {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .bnode-ico {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .bnode-name {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bnode-del {
+      font-size: 10px;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0 2px;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    .bnode:hover .bnode-del { opacity: 1; }
+    .bnode-del:hover { color: #ff6b6b; }
+    .bnode-bd { padding: 6px 10px 8px; }
+    .bnode-param {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      margin-bottom: 2px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .bnode-param-val {
+      background: rgba(255,255,255,.05);
+      padding: 1px 4px;
+      border-radius: 3px;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .port {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--card);
+      cursor: crosshair;
+      transition: transform .15s;
+      z-index: 11;
+    }
+    .port:hover { transform: scale(1.3); }
+    .port.out { right: -6px; top: 50%; margin-top: -6px; }
+    .port.in  { left: -6px;  top: 50%; margin-top: -6px; }
+    .wsvg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 5;
+    }
+    .inspector {
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .inspector::-webkit-scrollbar { width: 3px; }
+    .inspector::-webkit-scrollbar-thumb { background: var(--border); }
+    .insp-hd { padding: 14px 16px 12px; border-bottom: 1px solid var(--border); }
+    .insp-ttl { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+    .insp-sub { font-size: 10px; color: var(--muted); }
+    .insp-sec { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .insp-sec-ttl {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .insp-field { margin-bottom: 8px; }
+    .insp-field label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+    .insp-field input {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      padding: 5px 8px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .insp-field input:focus { border-color: var(--acc); }
+    .insp-empty {
+      padding: 40px 16px;
+      text-align: center;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+    .run-panel {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(10,10,13,.95);
+      backdrop-filter: blur(10px);
+      z-index: 30;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+    .run-panel.show { display: flex; }
+    .run-title { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; margin-bottom: 24px; }
+    .run-steps { display: flex; flex-direction: column; width: 100%; max-width: 380px; }
+    .run-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-left: 2px solid var(--border);
+      transition: all .3s;
+    }
+    .run-step:first-child { border-radius: 10px 10px 0 0; }
+    .run-step:last-child  { border-radius: 0 0 10px 10px; }
+    .run-step.done   { border-left-color: var(--acc2); background: rgba(67,224,159,.05); }
+    .run-step.active { border-left-color: var(--acc);  background: rgba(108,99,255,.08); }
+    .run-ico {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+      border: 2px solid var(--border);
+    }
+    .run-step.done .run-ico   { border-color: var(--acc2); color: var(--acc2); }
+    .run-step.active .run-ico { border-color: var(--acc); animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .run-step-name  { font-size: 12px; font-weight: 500; }
+    .run-step-sub   { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .run-step.done .run-step-sub   { color: var(--acc2); }
+    .run-step.active .run-step-sub { color: var(--acc); }
+    .run-close {
+      margin-top: 24px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      padding: 8px 20px;
+      border-radius: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .run-close:hover { color: var(--text); }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--acc2);
+      color: #0a0a0d;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 7px 18px;
+      border-radius: 20px;
+      opacity: 0;
+      transition: all .3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<div class="navbar">
+  <div class="nav-logo">WORKS HUB</div>
+  <div class="nav-links">
+    <a href="/">허브</a>
+    <a href="/builder.html" style="color:var(--text);">워크플로우 빌더</a>
+  </div>
+</div>
+
+<div class="builder">
+  <div class="palette" id="palette"></div>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <div class="canvas-top">
+      <input class="wf-name-input" id="wfName" placeholder="워크플로우 이름" value="새 워크플로우">
+      <button class="canvas-btn btn-save" onclick="saveWorkflow()">저장</button>
+      <button class="canvas-btn btn-run" onclick="runWorkflow()">실행</button>
+    </div>
+    <svg class="wsvg" id="wsvg"></svg>
+    <div class="canvas-empty" id="canvasEmpty">
+      <div class="canvas-empty-icon">+</div>
+      <div class="canvas-empty-text">왼쪽에서 모듈을 드래그해서 추가<br>포트를 연결해 흐름을 구성</div>
+    </div>
+    <div class="canvas-hint">모듈 드래그 → 포트 연결 → 실행</div>
+    <div class="run-panel" id="runPanel">
+      <div class="run-title" id="runTitle">실행 중...</div>
+      <div class="run-steps" id="runSteps"></div>
+      <button class="run-close" id="runClose" onclick="closeRunPanel()" style="display:none;">닫기</button>
+    </div>
+  </div>
+
+  <div class="inspector" id="inspector">
+    <div class="insp-empty">노드를 클릭하면<br>설정이 표시됩니다</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let modules   = [];
+let nodes     = [];
+let edges     = [];
+let selNode   = null;
+let nodeCount = 0;
+let dragging  = null;
+let dragOffset = { x: 0, y: 0 };
+let connectStart = null;
+
+const TYPE_ICON = { input:'IN', filter:'FT', transform:'TR', output:'OUT' };
+
+async function init() {
+  const res  = await fetch('/modules/index.json');
+  const data = await res.json();
+  modules = data.modules;
+  buildPalette();
+}
+
+function buildPalette() {
+  const types  = ['input', 'filter', 'transform', 'output'];
+  const labels = { input:'입력', filter:'필터', transform:'변환', output:'출력' };
+  const palette = document.getElementById('palette');
+  palette.innerHTML = types.map(type => {
+    const mods = modules.filter(m => m.type === type);
+    if (!mods.length) return '';
+    return `<div class="palette-sec">
+      <div class="palette-ttl">${labels[type]}</div>
+      ${mods.map(m => `
+        <div class="palette-mod" draggable="true"
+          ondragstart="onPaletteDragStart(event,'${m.id}')"
+          data-mod-id="${m.id}">
+          <div class="mod-ico" style="background:${m.color}22;color:${m.color}">${TYPE_ICON[m.type]}</div>
+          <div class="mod-info">
+            <div class="mod-name">${m.name}</div>
+            <div class="mod-tag">${type}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }).join('');
+}
+
+let dragModId = null;
+function onPaletteDragStart(e, modId) {
+  dragModId = modId;
+  e.dataTransfer.effectAllowed = 'copy';
+}
+
+const canvas = document.getElementById('canvasWrap');
+canvas.addEventListener('dragover', e => { e.preventDefault(); });
+canvas.addEventListener('drop', e => {
+  e.preventDefault();
+  if (!dragModId) return;
+  const rect = canvas.getBoundingClientRect();
+  addNode(dragModId, e.clientX - rect.left - 75, e.clientY - rect.top - 40);
+  dragModId = null;
+});
+
+function addNode(modId, x, y) {
+  const mod = modules.find(m => m.id === modId);
+  if (!mod) return;
+  const id = 'node_' + (++nodeCount);
+  const params = {};
+  (mod.params || []).forEach(p => { params[p.key] = p.default; });
+  const node = { id, modId, x, y, params };
+  nodes.push(node);
+  renderNode(node);
+  updateCanvasEmpty();
+}
+
+function renderNode(node) {
+  const mod = modules.find(m => m.id === node.modId);
+  const el  = document.createElement('div');
+  el.className = 'bnode';
+  el.id = node.id;
+  el.style.left = node.x + 'px';
+  el.style.top  = node.y + 'px';
+
+  const paramsHtml = (mod.params || []).slice(0,2).map(p =>
+    `<div class="bnode-param">
+      <span>${p.label}</span>
+      <span class="bnode-param-val">${node.params[p.key]}</span>
+    </div>`
+  ).join('');
+
+  el.innerHTML = `
+    <div class="bnode-hd">
+      <div class="bnode-ico" style="background:${mod.color}22;color:${mod.color}">${TYPE_ICON[mod.type]}</div>
+      <div class="bnode-name">${mod.name}</div>
+      <div class="bnode-del" onclick="deleteNode('${node.id}')">x</div>
+    </div>
+    <div class="bnode-bd">${paramsHtml}</div>
+    ${mod.type !== 'input'  ? `<div class="port in"  style="background:${mod.color}" data-node="${node.id}" data-port="in"  onmousedown="onPortDown(event,'${node.id}','in')"></div>`  : ''}
+    ${mod.type !== 'output' ? `<div class="port out" style="background:${mod.color}" data-node="${node.id}" data-port="out" onmousedown="onPortDown(event,'${node.id}','out')"></div>` : ''}
+  `;
+
+  el.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('port') || e.target.classList.contains('bnode-del')) return;
+    startDragNode(e, node.id);
+    selectNode(node.id);
+  });
+
+  canvas.appendChild(el);
+}
+
+function startDragNode(e, nodeId) {
+  const el = document.getElementById(nodeId);
+  const rect = el.getBoundingClientRect();
+  dragging   = nodeId;
+  dragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  document.addEventListener('mousemove', onDragMove);
+  document.addEventListener('mouseup',   onDragUp);
+}
+
+function onDragMove(e) {
+  if (!dragging) return;
+  const cr = canvas.getBoundingClientRect();
+  const el = document.getElementById(dragging);
+  const x  = e.clientX - cr.left - dragOffset.x;
+  const y  = e.clientY - cr.top  - dragOffset.y;
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
+  const node = nodes.find(n => n.id === dragging);
+  if (node) { node.x = x; node.y = y; }
+  drawWires();
+}
+
+function onDragUp() {
+  dragging = null;
+  document.removeEventListener('mousemove', onDragMove);
+  document.removeEventListener('mouseup',   onDragUp);
+}
+
+function onPortDown(e, nodeId, portType) {
+  e.stopPropagation();
+  if (portType === 'out') {
+    connectStart = { nodeId };
+    document.addEventListener('mouseup', onPortUp);
+  }
+}
+
+function onPortUp(e) {
+  document.removeEventListener('mouseup', onPortUp);
+  if (!connectStart) return;
+  const target = e.target;
+  if (target.classList.contains('port') && target.dataset.port === 'in') {
+    const toNodeId = target.dataset.node;
+    if (toNodeId !== connectStart.nodeId) {
+      const exists = edges.find(ed => ed.from === connectStart.nodeId && ed.to === toNodeId);
+      if (!exists) {
+        edges.push({ from: connectStart.nodeId, to: toNodeId });
+        drawWires();
+      }
+    }
+  }
+  connectStart = null;
+}
+
+function drawWires() {
+  const svg = document.getElementById('wsvg');
+  svg.innerHTML = '';
+  const cr = canvas.getBoundingClientRect();
+  edges.forEach((edge, idx) => {
+    const fn = document.getElementById(edge.from);
+    const tn = document.getElementById(edge.to);
+    if (!fn || !tn) return;
+    const fr = fn.getBoundingClientRect();
+    const tr = tn.getBoundingClientRect();
+    const x1 = fr.right  - cr.left, y1 = fr.top + fr.height/2 - cr.top;
+    const x2 = tr.left   - cr.left, y2 = tr.top + tr.height/2 - cr.top;
+    const cx = (x1+x2)/2;
+    const pid = 'wire'+idx;
+    const fromMod = modules.find(m => m.id === nodes.find(n => n.id === edge.from)?.modId);
+    const color = fromMod?.color || '#6c63ff';
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('id', pid);
+    path.setAttribute('d', `M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width','1.8');
+    path.setAttribute('stroke-opacity','0.5');
+    path.setAttribute('stroke-dasharray','5 4');
+    svg.appendChild(path);
+
+    const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('r','3.5');
+    dot.setAttribute('fill', color);
+    dot.setAttribute('opacity','0.85');
+    const anim = document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
+    anim.setAttribute('dur', `${1.4+idx*0.2}s`);
+    anim.setAttribute('repeatCount','indefinite');
+    const mp = document.createElementNS('http://www.w3.org/2000/svg','mpath');
+    mp.setAttribute('href','#'+pid);
+    anim.appendChild(mp);
+    dot.appendChild(anim);
+    svg.appendChild(dot);
+  });
+}
+
+function selectNode(nodeId) {
+  selNode = nodeId;
+  document.querySelectorAll('.bnode').forEach(n => n.classList.remove('sel'));
+  document.getElementById(nodeId)?.classList.add('sel');
+  renderInspector(nodeId);
+}
+
+function renderInspector(nodeId) {
+  const node = nodes.find(n => n.id === nodeId);
+  const mod  = modules.find(m => m.id === node?.modId);
+  if (!node || !mod) return;
+  document.getElementById('inspector').innerHTML = `
+    <div class="insp-hd">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <div style="width:22px;height:22px;border-radius:5px;background:${mod.color}22;color:${mod.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;">${TYPE_ICON[mod.type]}</div>
+        <div>
+          <div class="insp-ttl">${mod.name}</div>
+          <div class="insp-sub">${mod.type} 모듈</div>
+        </div>
+      </div>
+    </div>
+    <div class="insp-sec">
+      <div class="insp-sec-ttl">설정</div>
+      ${(mod.params || []).map(p => `
+        <div class="insp-field">
+          <label>${p.label}</label>
+          <input type="text" value="${node.params[p.key]}"
+            onchange="updateParam('${nodeId}','${p.key}',this.value)">
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function updateParam(nodeId, key, value) {
+  const node = nodes.find(n => n.id === nodeId);
+  if (!node) return;
+  node.params[key] = value;
+  const el  = document.getElementById(nodeId);
+  const mod = modules.find(m => m.id === node.modId);
+  const bd  = el?.querySelector('.bnode-bd');
+  if (bd) {
+    bd.innerHTML = (mod.params || []).slice(0,2).map(p =>
+      `<div class="bnode-param"><span>${p.label}</span><span class="bnode-param-val">${node.params[p.key]}</span></div>`
+    ).join('');
+  }
+}
+
+function deleteNode(nodeId) {
+  nodes = nodes.filter(n => n.id !== nodeId);
+  edges = edges.filter(e => e.from !== nodeId && e.to !== nodeId);
+  document.getElementById(nodeId)?.remove();
+  drawWires();
+  updateCanvasEmpty();
+  if (selNode === nodeId) {
+    selNode = null;
+    document.getElementById('inspector').innerHTML = '<div class="insp-empty">노드를 클릭하면<br>설정이 표시됩니다</div>';
+  }
+}
+
+function updateCanvasEmpty() {
+  document.getElementById('canvasEmpty').style.display = nodes.length ? 'none' : 'block';
+}
+
+async function saveWorkflow() {
+  const name = document.getElementById('wfName').value || '새 워크플로우';
+  const id   = 'wf-' + Date.now();
+  const wf   = {
+    id, name,
+    desc: nodes.map(n => modules.find(m => m.id === n.modId)?.name).join(' → '),
+    color: '#6c63ff',
+    updatedAt: '방금',
+    nodes: nodes.map(n => ({ id: n.id, modId: n.modId, x: n.x, y: n.y, params: n.params })),
+    edges
+  };
+  const res = await fetch('/api/workflow/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(wf)
+  });
+  if (res.ok) showToast('허브에 저장됐어요');
+}
+
+async function runWorkflow() {
+  if (!nodes.length) { showToast('노드를 먼저 추가하세요'); return; }
+  const ordered = getExecutionOrder();
+  if (!ordered) { showToast('노드를 연결해주세요'); return; }
+
+  const panel = document.getElementById('runPanel');
+  const stepsEl = document.getElementById('runSteps');
+  panel.classList.add('show');
+  document.getElementById('runClose').style.display = 'none';
+
+  stepsEl.innerHTML = ordered.map(nodeId => {
+    const node = nodes.find(n => n.id === nodeId);
+    const mod  = modules.find(m => m.id === node.modId);
+    return `<div class="run-step" id="rs_${nodeId}">
+      <div class="run-ico">○</div>
+      <div>
+        <div class="run-step-name">${mod.name}</div>
+        <div class="run-step-sub">대기 중</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  let data = {};
+  for (const nodeId of ordered) {
+    const node   = nodes.find(n => n.id === nodeId);
+    const stepEl = document.getElementById('rs_' + nodeId);
+    stepEl.className = 'run-step active';
+    stepEl.querySelector('.run-ico').textContent = '↻';
+    stepEl.querySelector('.run-step-sub').textContent = '실행 중...';
+    try {
+      await loadModuleScript(node.modId);
+      const modObj = getModuleObject(node.modId);
+      data = await modObj.run(data, node.params);
+      stepEl.className = 'run-step done';
+      stepEl.querySelector('.run-ico').textContent = '✓';
+      stepEl.querySelector('.run-step-sub').textContent = `${data.count || 0}개 처리됨`;
+    } catch(e) {
+      stepEl.querySelector('.run-step-sub').textContent = '오류: ' + e.message;
+      break;
+    }
+  }
+  document.getElementById('runClose').style.display = 'block';
+}
+
+function getExecutionOrder() {
+  if (!edges.length && nodes.length === 1) return [nodes[0].id];
+  const inDegree = {};
+  nodes.forEach(n => { inDegree[n.id] = 0; });
+  edges.forEach(e => { inDegree[e.to] = (inDegree[e.to] || 0) + 1; });
+  const queue  = nodes.filter(n => inDegree[n.id] === 0).map(n => n.id);
+  const result = [];
+  while (queue.length) {
+    const cur = queue.shift();
+    result.push(cur);
+    edges.filter(e => e.from === cur).forEach(e => {
+      inDegree[e.to]--;
+      if (inDegree[e.to] === 0) queue.push(e.to);
+    });
+  }
+  return result.length === nodes.length ? result : null;
+}
+
+async function loadModuleScript(modId) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[data-mod="${modId}"]`)) return resolve();
+    const s = document.createElement('script');
+    s.src = `/modules/${modId}.js`;
+    s.dataset.mod = modId;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function getModuleObject(modId) {
+  const map = {
+    'folder-open':  typeof FolderOpen  !== 'undefined' ? FolderOpen  : null,
+    'image-select': typeof ImageSelect !== 'undefined' ? ImageSelect : null,
+    'rename':       typeof Rename      !== 'undefined' ? Rename      : null,
+    'download':     typeof Download    !== 'undefined' ? Download    : null,
+  };
+  return map[modId];
+}
+
+function closeRunPanel() {
+  document.getElementById('runPanel').classList.remove('show');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function loadWorkflowFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const wfId   = params.get('wf');
+  if (!wfId) return;
+  const res  = await fetch('/workflows/index.json');
+  const data = await res.json();
+  const wf   = data.workflows.find(w => w.id === wfId);
+  if (!wf) return;
+  document.getElementById('wfName').value = wf.name;
+  for (const n of wf.nodes) {
+    const mod = modules.find(m => m.id === n.modId);
+    if (!mod) continue;
+    nodes.push({ id: n.id, modId: n.modId, x: n.x, y: n.y, params: n.params });
+    nodeCount++;
+    renderNode(nodes[nodes.length - 1]);
+  }
+  edges = wf.edges || [];
+  drawWires();
+  updateCanvasEmpty();
+}
+
+init().then(() => loadWorkflowFromUrl());
+</script>
+</body>
+</html>

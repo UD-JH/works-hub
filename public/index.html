@@ -5,45 +5,153 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Works Hub</title>
   <link rel="stylesheet" href="styles/main.css">
+  <style>
+    .card { position: relative; }
+    .card-menu-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: all .15s;
+      z-index: 5;
+      line-height: 1;
+    }
+    .card:hover .card-menu-btn {
+      opacity: 1;
+      border-color: var(--border);
+      background: var(--panel);
+    }
+    .card-menu-btn:hover { color: var(--text); }
+
+    /* 실행 모달 */
+    .run-modal-bg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,13,.85);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .run-modal-bg.show { display: flex; }
+    .run-modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 420px;
+      padding: 28px;
+    }
+    .run-modal-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .run-modal-desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+    .run-modal-steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 24px; }
+    .run-modal-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-left: 2px solid var(--border);
+      transition: all .3s;
+    }
+    .run-modal-step.done   { border-left-color: var(--acc2); background: rgba(67,224,159,.05); }
+    .run-modal-step.active { border-left-color: var(--acc);  background: rgba(108,99,255,.08); }
+    .run-modal-step-ico {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .run-modal-step.done .run-modal-step-ico   { border-color: var(--acc2); color: var(--acc2); }
+    .run-modal-step.active .run-modal-step-ico { border-color: var(--acc); animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .run-modal-step-name { font-size: 12px; font-weight: 500; }
+    .run-modal-step-sub  { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .run-modal-step.done .run-modal-step-sub   { color: var(--acc2); }
+    .run-modal-step.active .run-modal-step-sub { color: var(--acc); }
+    .run-modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .run-modal-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      padding: 7px 18px;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-cancel { background: var(--card); border: 1px solid var(--border); color: var(--muted); }
+    .btn-cancel:hover { color: var(--text); }
+    .btn-start  { background: var(--acc2); color: #0a0a0d; font-weight: 600; }
+    .btn-start:hover { filter: brightness(1.1); }
+  </style>
 </head>
 <body>
 
-  <!-- 네비게이션 -->
-  <nav class="navbar">
-    <div class="nav-logo">WORKS HUB</div>
-    <div class="nav-links">
-      <a href="#">허브</a>
-      <a href="#">워크플로우</a>
-      <a href="#">모듈</a>
+<nav class="navbar">
+  <div class="nav-logo">WORKS HUB</div>
+  <div class="nav-links">
+    <a href="#">허브</a>
+    <a href="/builder.html">워크플로우 빌더</a>
+  </div>
+</nav>
+
+<main class="main">
+  <h1 class="hero-title">WORKS HUB</h1>
+  <p class="hero-sub">도구와 워크플로우를 한 곳에서</p>
+
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title">도구</span>
     </div>
-  </nav>
+    <div class="card-grid" id="toolGrid"></div>
+  </section>
 
-  <!-- 메인 콘텐츠 -->
-  <main class="main">
-    <h1 class="hero-title">WORKS HUB</h1>
-    <p class="hero-sub">도구와 워크플로우를 한 곳에서</p>
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title">워크플로우</span>
+    </div>
+    <div class="card-grid" id="workflowGrid"></div>
+  </section>
+</main>
 
-    <!-- 도구 섹션 -->
-    <section class="section">
-      <div class="section-header">
-        <span class="section-title">도구</span>
-      </div>
-      <div class="card-grid" id="toolGrid">
-        <!-- tools/index.json 에서 동적으로 생성됩니다 -->
-      </div>
-    </section>
+<!-- 실행 모달 -->
+<div class="run-modal-bg" id="runModalBg">
+  <div class="run-modal">
+    <div class="run-modal-title" id="runModalTitle"></div>
+    <div class="run-modal-desc"  id="runModalDesc"></div>
+    <div class="run-modal-steps" id="runModalSteps"></div>
+    <div class="run-modal-btns">
+      <button class="run-modal-btn btn-cancel" id="runModalCancel" onclick="closeRunModal()">닫기</button>
+      <button class="run-modal-btn btn-start"  id="runModalStart"  onclick="startRun()">실행</button>
+    </div>
+  </div>
+</div>
 
-    <!-- 워크플로우 섹션 -->
-    <section class="section">
-      <div class="section-header">
-        <span class="section-title">워크플로우</span>
-      </div>
-      <div class="card-grid" id="workflowGrid">
-        <!-- workflows/index.json 에서 동적으로 생성됩니다 -->
-      </div>
-    </section>
-  </main>
-
-  <script src="scripts/hub.js"></script>
+<script src="scripts/hub.js"></script>
 </body>
 </html>

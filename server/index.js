@@ -53,6 +53,31 @@ app.post('/api/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+// 워크플로우 저장
+const fs   = require('fs');
+
+app.post('/api/workflow/save', requireAuth, (req, res) => {
+  const wf       = req.body;
+  const indexPath = path.join(__dirname, '../public/workflows/index.json');
+
+  // 기존 index.json 읽기
+  let data = { workflows: [] };
+  if (fs.existsSync(indexPath)) {
+    data = JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
+  }
+
+  // 같은 id면 덮어쓰기, 없으면 추가
+  const idx = data.workflows.findIndex(w => w.id === wf.id);
+  if (idx >= 0) {
+    data.workflows[idx] = wf;
+  } else {
+    data.workflows.push(wf);
+  }
+
+  fs.writeFileSync(indexPath, JSON.stringify(data, null, 2));
+  res.json({ ok: true });
+});
+
 // 나머지 정적 파일은 로그인 후에만
 app.use(requireAuth, express.static(path.join(__dirname, '../public')));
 

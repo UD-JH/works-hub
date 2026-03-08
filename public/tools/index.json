@@ -1,20 +1,20 @@
 {
   "tools": [
     {
-      "id": "collector",
+      "id": "image-collector",
       "name": "이미지 콜렉터",
       "desc": "이미지 수집, 선택, 정리",
       "color": "#ff6b6b",
       "version": "v1.0",
-      "url": "/tools/collector/index.html"
+      "url": "/tools/image-collector/index.html"
     },
     {
-      "id": "converter",
+      "id": "image-converter",
       "name": "이미지 컨버터",
       "desc": "포맷 변환, 리사이즈",
       "color": "#ffa94d",
       "version": "v1.0",
-      "url": "/tools/converter/index.html"
+      "url": "/tools/image-converter/index.html"
     },
     {
       "id": "dashboard",

@@ -1,0 +1,46 @@
+{
+  "modules": [
+    {
+      "id": "folder-open",
+      "name": "폴더 열기",
+      "type": "input",
+      "color": "#6c63ff",
+      "desc": "로컬 폴더에서 파일을 불러옵니다",
+      "params": [
+        { "key": "accept", "label": "파일 형식", "default": "*" }
+      ]
+    },
+    {
+      "id": "image-select",
+      "name": "이미지 선택",
+      "type": "filter",
+      "color": "#ffa94d",
+      "desc": "이미지 파일만 필터링합니다",
+      "params": [
+        { "key": "extensions", "label": "확장자", "default": "jpg,png,webp,gif" }
+      ]
+    },
+    {
+      "id": "rename",
+      "name": "파일명 변경",
+      "type": "transform",
+      "color": "#6c63ff",
+      "desc": "파일명을 패턴에 맞게 일괄 변경합니다",
+      "params": [
+        { "key": "pattern", "label": "패턴", "default": "IMG_{n}" },
+        { "key": "start", "label": "시작 번호", "default": "1" },
+        { "key": "padding", "label": "자릿수", "default": "3" }
+      ]
+    },
+    {
+      "id": "download",
+      "name": "다운로드",
+      "type": "output",
+      "color": "#43e09f",
+      "desc": "처리된 파일을 ZIP으로 다운로드합니다",
+      "params": [
+        { "key": "filename", "label": "ZIP 파일명", "default": "output" }
+      ]
+    }
+  ]
+}
