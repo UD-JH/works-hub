@@ -190,6 +190,7 @@ canvas{max-height:200px;}
   <div class="nav-tabs">
     <div class="nav-tab active" onclick="goPage('overview',this)">📊 오버뷰</div>
     <div class="nav-tab" onclick="goPage('accounts',this)">🗂 계정별</div>
+    <a class="nav-tab" href="report.html" style="text-decoration:none;">📄 보고서</a>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <div class="fx-wrap">
@@ -200,7 +201,7 @@ canvas{max-height:200px;}
       </div>
       <button class="fx-apply" onclick="applyFx()">적용</button>
     </div>
-    <button class="load-btn" id="loadBtn" onclick="loadSheetData()">
+    <button class="load-btn" id="loadBtn" onclick="triggerLoad()">
       <span id="loadIcon">↻</span> <span id="loadLabel">데이터 불러오기</span>
     </button>
   </div>
@@ -285,177 +286,43 @@ canvas{max-height:200px;}
   </div>
 </div>
 
+<script src="sheets.js"></script>
 <script>
-// ═══════════════════════════════════════════
-//  CONFIG
-// ═══════════════════════════════════════════
-const SHEET_ID  = '1HMGzUNOb0ltelHZzJanYnaNhQEg5R3p_3YNwtH_Fck8';
-const SHEET_TAB = 'PREPARATION_DATA';
-// Google Sheets API key — 여기에 API 키 입력
-let API_KEY = '';
-
-// ═══════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════
-let FX       = 9.5;       // ¥→₩ 환율
-let RAW      = [];        // 원본 데이터
-let MONTHS   = [];        // 정렬된 월 목록
-let CUR_MON  = null;      // 선택된 월
-let WORKS_META = {};      // work_id → { account_id, platform, title, nick, color }
-let ACCT_META  = {};      // account_id → { name, platform, color }
-
 // 차트 인스턴스
 let revChartInst=null, donutInst=null, wmRevInst=null, wmSalesInst=null, amRevInst=null, amFanInst=null;
-
-// 플랫폼/계정 색상
-const PLATFORM_COLOR = { fanza:'#ff6b9d', dlsite:'#7c6af5' };
-const ACCT_COLOR = { '모코야츠':'#ff6b9d', '우바야츠':'#38bdf8' };
-const NICK_COLORS = {
-  '레이':'#ff6b9d','하나':'#ff9f43','리나':'#7c6af5','아이코':'#3ecf8e',
-  '유부녀':'#38bdf8','':'#52546e'
-};
 
 Chart.defaults.color='#52546e'; Chart.defaults.borderColor='#232535';
 Chart.defaults.font.family="'DM Mono',monospace"; Chart.defaults.font.size=11;
 
-// ═══════════════════════════════════════════
-//  HELPERS
-// ═══════════════════════════════════════════
-function parseNum(s) {
-  if (!s || ['', 'X', '-'].includes(String(s).trim())) return 0;
-  const n = parseFloat(String(s).replace(/[^\d.]/g,''));
-  return isNaN(n) ? 0 : n;
-}
-function krw(yen) { return Math.round(yen * FX); }
-function fmtKRW(won) {
-  if (won >= 100000000) return `₩${(won/100000000).toFixed(1)}억`;
-  if (won >= 10000) return `₩${(won/10000).toFixed(1)}만`;
-  return `₩${won.toLocaleString()}`;
-}
-function pct(a, b) { return b===0 ? 0 : Math.round((a-b)/b*100); }
-function prevMon(m) {
-  const idx = MONTHS.indexOf(m);
-  return idx > 0 ? MONTHS[idx-1] : null;
-}
-// month별 집계된 데이터 접근
-let AGG = {}; // { month: { works:{wid:{lf,sales}}, accounts:{aid:{fans}} } }
-
-function buildAgg() {
-  AGG = {};
-  // work별 월별 LF_revenue, sales_count_DoD 합산
-  for (const r of RAW) {
-    const m = String(r.month);
-    if (!AGG[m]) AGG[m] = { works:{}, accounts:{} };
-    const wid = r.work_id;
-    if (!AGG[m].works[wid]) AGG[m].works[wid] = { lf:0, sales:0 };
-    AGG[m].works[wid].lf    += parseNum(r.LF_revenue);
-    AGG[m].works[wid].sales += parseNum(r.sales_count_DoD);
-  }
-  // 계정별 월별 팬수: 최신 crawl_date 기준
-  const fanLatestDate = {};
-  for (const r of RAW) {
-    const m   = String(r.month);
-    const aid = r.account_id;
-    const key = `${m}__${aid}`;
-    if (!fanLatestDate[key] || r.crawl_date > fanLatestDate[key]) {
-      fanLatestDate[key] = r.crawl_date;
-      if (!AGG[m]) AGG[m] = { works:{}, accounts:{} };
-      AGG[m].accounts[aid] = parseInt(r.fans) || 0;
-    }
-  }
-
-  // WORKS_META, ACCT_META 구성
-  WORKS_META = {}; ACCT_META = {};
-  for (const r of RAW) {
-    if (!WORKS_META[r.work_id]) {
-      WORKS_META[r.work_id] = {
-        account_id: r.account_id, platform: r.platform,
-        title: r.title, nick: r.nick || '',
-        color: NICK_COLORS[r.nick] || NICK_COLORS[''],
-      };
-    }
-    if (!ACCT_META[r.account_id]) {
-      ACCT_META[r.account_id] = {
-        name: r.account_name || r.account_id,
-        platform: r.platform,
-        color: ACCT_COLOR[r.account_id] || '#52546e',
-      };
-    }
-  }
-
-  MONTHS = Object.keys(AGG).sort((a,b) => {
-    // 12월을 1월 앞에 오도록 처리
-    const order = {'12':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'11':11};
-    return (order[a]??parseInt(a)) - (order[b]??parseInt(b));
-  });
-  CUR_MON = MONTHS[MONTHS.length-1];
-}
-
-function worksOfAcct(aid, platform=null) {
-  return Object.entries(WORKS_META)
-    .filter(([,m]) => m.account_id===aid && (!platform || m.platform===platform))
-    .map(([wid]) => wid);
-}
-function worksOfPlatform(pl) {
-  return Object.entries(WORKS_META).filter(([,m])=>m.platform===pl).map(([wid])=>wid);
-}
-function totalLF(wids, mon) {
-  if (!AGG[mon]) return 0;
-  return wids.reduce((s,wid) => s + (AGG[mon].works[wid]?.lf||0), 0);
-}
-function totalSales(wids, mon) {
-  if (!AGG[mon]) return 0;
-  return wids.reduce((s,wid) => s + (AGG[mon].works[wid]?.sales||0), 0);
-}
-
-// ═══════════════════════════════════════════
-//  LOAD DATA
-// ═══════════════════════════════════════════
-async function loadSheetData() {
-  // API 키 서버에서 받아오기
-if (!API_KEY) {
-  const cfg = await fetch('/api/config').then(r => r.json());
-  API_KEY = cfg.apiKey;
-}
-  const btn = document.getElementById('loadBtn');
-  btn.className = 'load-btn loading';
-  document.getElementById('loadIcon').textContent = '↻';
-  document.getElementById('loadLabel').textContent = '불러오는 중...';
-  document.getElementById('loadingText').textContent = '구글시트 데이터 불러오는 중...';
-  document.getElementById('loadingOverlay').classList.add('show');
-
-  try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_TAB)}?key=${API_KEY}`;
-    const res  = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    const [header, ...dataRows] = json.values;
-    RAW = dataRows.map(row => {
-      const obj = {};
-      header.forEach((col, i) => { obj[col] = row[i] ?? ''; });
-      return obj;
-    });
-
-    buildAgg();
-    renderAll();
-
-    btn.className = 'load-btn ok';
-    document.getElementById('loadIcon').textContent = '✓';
-    document.getElementById('loadLabel').textContent = `${RAW.length}행 로드됨`;
-  } catch (e) {
-    btn.className = 'load-btn err';
-    document.getElementById('loadIcon').textContent = '✕';
-    document.getElementById('loadLabel').textContent = '로드 실패';
-    console.error(e);
-    alert(`데이터 로드 실패: ${e.message}\n\nAPI 키를 확인하거나 시트 권한을 점검하세요.`);
-  } finally {
-    document.getElementById('loadingOverlay').classList.remove('show');
-  }
-}
-
 function applyFx() {
   const v = parseFloat(document.getElementById('fxInput').value);
   if (!isNaN(v) && v > 0) { FX = v; renderAll(); }
+}
+
+function triggerLoad() {
+  const btn = document.getElementById('loadBtn');
+  loadSheetData(
+    (count) => {
+      btn.className = 'load-btn ok';
+      document.getElementById('loadIcon').textContent = '✓';
+      document.getElementById('loadLabel').textContent = `${count}행 로드됨`;
+      renderAll();
+    },
+    (e) => {
+      btn.className = 'load-btn err';
+      document.getElementById('loadIcon').textContent = '✕';
+      document.getElementById('loadLabel').textContent = '로드 실패';
+      alert(`데이터 로드 실패: ${e.message}`);
+    },
+    (isLoading) => {
+      document.getElementById('loadingOverlay').classList.toggle('show', isLoading);
+      if (isLoading) {
+        btn.className = 'load-btn loading';
+        document.getElementById('loadIcon').textContent = '↻';
+        document.getElementById('loadLabel').textContent = '불러오는 중...';
+      }
+    }
+  );
 }
 
 // ═══════════════════════════════════════════
@@ -802,7 +669,31 @@ function goPage(id, btn) {
 // ═══════════════════════════════════════════
 //  INIT — 페이지 열리면 자동 로드
 // ═══════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => loadSheetData());
+window.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('loadBtn');
+  loadSheetData(
+    (count) => {
+      btn.className = 'load-btn ok';
+      document.getElementById('loadIcon').textContent = '✓';
+      document.getElementById('loadLabel').textContent = `${count}행 로드됨`;
+      renderAll();
+    },
+    (e) => {
+      btn.className = 'load-btn err';
+      document.getElementById('loadIcon').textContent = '✕';
+      document.getElementById('loadLabel').textContent = '로드 실패';
+      alert(`데이터 로드 실패: ${e.message}`);
+    },
+    (isLoading) => {
+      document.getElementById('loadingOverlay').classList.toggle('show', isLoading);
+      if (isLoading) {
+        btn.className = 'load-btn loading';
+        document.getElementById('loadIcon').textContent = '↻';
+        document.getElementById('loadLabel').textContent = '불러오는 중...';
+      }
+    }
+  );
+});
 </script>
 </body>
 </html>
