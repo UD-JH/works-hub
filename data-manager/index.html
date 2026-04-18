@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>데이터 매니저</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d12;
+    --surface: #13131a;
+    --surface2: #1a1a24;
+    --border: #2a2a38;
+    --text: #eeeef5;
+    --muted: #666680;
+    --accent: #f0a060;
+    --accent2: #60f0a0;
+    --accent3: #6090f0;
+    --danger: #f06060;
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(96,240,160,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 40px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(13,13,18,0.92);
+    backdrop-filter: blur(16px);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.03em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 30px; height: 30px;
+    background: linear-gradient(135deg, var(--accent2), #60f0f0);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+
+  .back-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .back-btn:hover { color: var(--text); }
+
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 40px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+  }
+
+  .page-title span { color: var(--accent2); }
+
+  .page-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 10px;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent2);
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .panel-head {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .log-box {
+    padding: 16px 22px;
+    height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .log-line {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .log-line.success { color: var(--accent2); }
+  .log-line.error   { color: var(--danger); }
+  .log-line.info    { color: var(--accent3); }
+
+  .log-box::-webkit-scrollbar { width: 4px; }
+  .log-box::-webkit-scrollbar-track { background: transparent; }
+  .log-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .unpaired-list {
+    padding: 16px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .unpaired-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(240,96,96,0.06);
+    border: 1px solid rgba(240,96,96,0.15);
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--danger);
+  }
+
+  .empty-state {
+    padding: 30px 22px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--accent2);
+    color: var(--bg);
+  }
+  .btn-primary:hover { filter: brightness(1.1); }
+
+  .btn-ghost {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">📂</div>
+    데이터 매니저
+  </div>
+  <a class="back-btn" href="../index.html">← Works Hub</a>
+</div>
+
+<div class="wrap">
+
+  <div>
+    <div class="page-title">데이터 <span>매니저</span></div>
+    <div class="page-sub">
+      학습 데이터 폴더를 자동으로 감시하고 관리해요.<br>
+      inbox에 ZIP을 넣으면 자동 해제, 마스크 저장하면 자동 페어링됩니다.
+    </div>
+  </div>
+
+  <!-- 통계 카드 -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">총 페어 수</div>
+      <div class="stat-value" id="pair-count">-</div>
+      <div class="stat-sub" id="learning-dir">로딩 중...</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">미페어링</div>
+      <div class="stat-value" id="unpaired-count" style="color: var(--danger);">-</div>
+      <div class="stat-sub">원본 없는 마스크</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">감시 상태</div>
+      <div class="stat-value" style="font-size:20px; color: var(--accent2);">활성</div>
+      <div class="stat-sub">inbox / output 감시 중</div>
+    </div>
+  </div>
+
+  <!-- 로그 -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">실시간 로그</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="status-dot"></div>
+        <button class="btn btn-ghost" onclick="clearLog()" style="padding:6px 14px; font-size:11px;">초기화</button>
+      </div>
+    </div>
+    <div class="log-box" id="log-box">
+      <div class="log-line info">서버 연결 중...</div>
+    </div>
+  </div>
+
+  <!-- 미페어링 -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">미페어링 파일</div>
+      <button class="btn btn-primary" onclick="fetchStatus()" style="padding:7px 16px; font-size:11px;">새로고침</button>
+    </div>
+    <div id="unpaired-section">
+      <div class="empty-state">미페어링 파일 없음</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let lastLogCount = 0
+
+  async function fetchStatus() {
+    try {
+      const res  = await fetch('http://localhost:3001/status')
+      const data = await res.json()
+
+      document.getElementById('pair-count').textContent    = data.pairCount
+      document.getElementById('unpaired-count').textContent = data.unpaired.length
+      document.getElementById('learning-dir').textContent  = data.learningDir
+
+      if (data.logs.length !== lastLogCount) {
+        lastLogCount = data.logs.length
+        const logBox = document.getElementById('log-box')
+        logBox.innerHTML = data.logs.map(line => {
+          let cls = 'log-line'
+          if (line.includes('완료')) cls += ' success'
+          if (line.includes('오류') || line.includes('없음')) cls += ' error'
+          if (line.includes('감지') || line.includes('갱신')) cls += ' info'
+          return `<div class="${cls}">${line}</div>`
+        }).join('')
+      }
+
+      const section = document.getElementById('unpaired-section')
+      if (data.unpaired.length === 0) {
+        section.innerHTML = '<div class="empty-state">미페어링 파일 없음</div>'
+      } else {
+        section.innerHTML = '<div class="unpaired-list">' +
+          data.unpaired.map(f => `<div class="unpaired-item">⚠ ${f}</div>`).join('') +
+          '</div>'
+      }
+    } catch (e) {
+      document.getElementById('log-box').innerHTML =
+        '<div class="log-line error">서버 연결 실패 - 서버가 실행 중인지 확인해주세요</div>'
+    }
+  }
+
+  function clearLog() {
+    lastLogCount = 0
+    document.getElementById('log-box').innerHTML = ''
+  }
+
+  fetchStatus()
+  setInterval(fetchStatus, 2000)
+</script>
+</body>
+</html>
