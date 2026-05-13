@@ -31,9 +31,24 @@ app.get('/login.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
-// API 키 엔드포인트 (로그인 후에만 접근 가능)
-app.get('/api/config', requireAuth, (req, res) => {
-  res.json({ apiKey: process.env.GOOGLE_API_KEY });
+// Google Sheets 프록시 (API 키 서버에서만 사용)
+app.get('/api/sheets', requireAuth, async (req, res) => {
+  const SHEET_ID  = '1HMGzUNOb0ltelHZzJanYnaNhQEg5R3p_3YNwtH_Fck8';
+  const SHEET_RANGE = 'PREPARATION_DATA!A1:AH10000';
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_RANGE)}?key=${process.env.GOOGLE_API_KEY}`;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Google API ${resp.status}`);
+    const json = await resp.json();
+    if (!json.values) {
+      const msg = json.error?.message || JSON.stringify(json);
+      throw new Error(`Google Sheets 응답에 values 없음: ${msg}`);
+    }
+    res.json(json);
+  } catch (e) {
+    console.error('Sheets proxy error:', e);
+    res.status(502).json({ error: '구글 시트 데이터를 가져오지 못했어요' });
+  }
 });
 
 // 로그인 처리
@@ -66,15 +81,41 @@ app.post('/api/workflow/save', requireAuth, (req, res) => {
     data = JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
   }
 
-  // 같은 id면 덮어쓰기, 없으면 추가
+  // 같은 id면 업데이트(createdAt 보존), 없으면 추가
   const idx = data.workflows.findIndex(w => w.id === wf.id);
   if (idx >= 0) {
-    data.workflows[idx] = wf;
+    const existing = data.workflows[idx];
+    data.workflows[idx] = {
+      ...wf,
+      createdAt:     existing.createdAt     || wf.createdAt || new Date().toISOString(),
+      lastRunAt:     existing.lastRunAt     ?? null,
+      lastRunStatus: existing.lastRunStatus ?? null,
+    };
   } else {
+    if (!wf.createdAt) wf.createdAt = new Date().toISOString();
     data.workflows.push(wf);
   }
 
   fs.writeFileSync(indexPath, JSON.stringify(data, null, 2));
+  res.json({ ok: true });
+});
+
+// 워크플로우 실행 결과 기록
+app.post('/api/workflow/run-status', requireAuth, (req, res) => {
+  const { id, lastRunAt, lastRunStatus } = req.body;
+  if (!id) return res.status(400).json({ ok: false });
+
+  const indexPath = path.join(__dirname, '../public/workflows/index.json');
+  let data = { workflows: [] };
+  if (fs.existsSync(indexPath)) {
+    data = JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
+  }
+  const idx = data.workflows.findIndex(w => w.id === id);
+  if (idx >= 0) {
+    data.workflows[idx].lastRunAt     = lastRunAt;
+    data.workflows[idx].lastRunStatus = lastRunStatus;
+    fs.writeFileSync(indexPath, JSON.stringify(data, null, 2));
+  }
   res.json({ ok: true });
 });
 

@@ -29,6 +29,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .fx-unit{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);padding-right:8px;}
 .fx-apply{font-family:'DM Mono',monospace;font-size:10px;padding:6px 12px;border-radius:7px;background:var(--fanza);color:#fff;border:none;cursor:pointer;}
 .fx-apply:hover{filter:brightness(1.15);}
+.curr-btn{font-family:'DM Mono',monospace;font-size:10px;padding:6px 14px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .15s;letter-spacing:.05em;}
+.curr-btn:hover{border-color:#36384f;color:var(--text);}
+.curr-btn.active{background:var(--dlsite);color:#fff;border-color:transparent;}
 .load-btn{font-family:'DM Mono',monospace;font-size:10px;padding:6px 12px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;}
 .load-btn:hover{border-color:#36384f;color:var(--text);}
 .load-btn.loading{color:var(--amber);}
@@ -180,7 +183,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="logo"><div class="logo-dot"></div>작품 보고서</div>
   </div>
   <div class="header-right">
-    <div class="fx-wrap">
+    <button class="curr-btn" id="currToggleBtn" onclick="toggleReportCurrency()">JPY</button>
+    <div class="fx-wrap" id="fxWrap" style="display:none;">
       <span class="fx-label">¥ 환율</span>
       <div class="fx-input-wrap">
         <input class="fx-input" id="fxInput" type="number" value="9.5" step="0.1" min="1">
@@ -188,9 +192,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       </div>
       <button class="fx-apply" onclick="applyFx()">적용</button>
     </div>
-    <button class="load-btn" id="loadBtn" onclick="triggerLoad()">
+    <button class="load-btn" id="loadBtn" onclick="triggerLoad(true)">
       <span id="loadIcon">↻</span><span id="loadLabel">데이터 불러오기</span>
     </button>
+    <button class="print-btn" id="mdExportBtn" onclick="exportMarkdown()" style="display:none;">MD 내보내기</button>
     <button class="print-btn" onclick="window.print()">인쇄 / PDF</button>
   </div>
 </div>
@@ -200,7 +205,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <span class="ctrl-label">보고서 유형</span>
   <div class="seg">
     <button class="seg-btn active" id="typeMonBtn" onclick="switchType('monthly')">월간</button>
-    <button class="seg-btn" id="typeWkBtn"  onclick="switchType('weekly')">주간</button>
+    <button class="seg-btn" id="typeWkBtn"  onclick="switchType('weekly')">구간</button>
   </div>
 
   <!-- 월간 옵션 -->
@@ -242,6 +247,18 @@ Chart.defaults.color='#52546e'; Chart.defaults.borderColor='#232535';
 Chart.defaults.font.family="'DM Mono',monospace"; Chart.defaults.font.size=11;
 
 var reportType = 'monthly';
+var REPORT_CURRENCY = 'JPY';
+
+function toggleReportCurrency() {
+  REPORT_CURRENCY = REPORT_CURRENCY === 'KRW' ? 'JPY' : 'KRW';
+  const btn = document.getElementById('currToggleBtn');
+  btn.textContent = REPORT_CURRENCY;
+  btn.classList.toggle('active', REPORT_CURRENCY === 'KRW');
+  document.getElementById('fxWrap').style.display = REPORT_CURRENCY === 'KRW' ? '' : 'none';
+  if (document.getElementById('reportDoc').style.display !== 'none') generateReport();
+}
+function rFmt(yen)     { return REPORT_CURRENCY === 'KRW' ? fmtKRW(krw(yen))     : fmtJPYFull(yen); }
+function rFmtFull(yen) { return REPORT_CURRENCY === 'KRW' ? fmtKRWFull(krw(yen)) : fmtJPYFull(yen); }
 
 // ── 환율 ──
 function applyFx() {
@@ -250,22 +267,23 @@ function applyFx() {
 }
 
 // ── 데이터 로드 ──
-function triggerLoad() {
+function triggerLoad(force = false) {
   const btn = document.getElementById('loadBtn');
-  loadSheetData(
-    (count) => {
+  loadSheetData({
+    force,
+    onSuccess: (count, fromCache) => {
       btn.className = 'load-btn ok';
       document.getElementById('loadIcon').textContent = '✓';
-      document.getElementById('loadLabel').textContent = `${count}행 로드됨`;
+      document.getElementById('loadLabel').textContent = count + '행 로드됨' + (fromCache ? ' (캐시)' : '');
       buildMonSelect();
     },
-    (e) => {
+    onError: (e) => {
       btn.className = 'load-btn err';
       document.getElementById('loadIcon').textContent = '✕';
       document.getElementById('loadLabel').textContent = '로드 실패';
-      alert(`데이터 로드 실패: ${e.message}`);
+      alert('데이터 로드 실패: ' + e.message);
     },
-    (isLoading) => {
+    onLoading: (isLoading) => {
       document.getElementById('loadingOverlay').classList.toggle('show', isLoading);
       if (isLoading) {
         btn.className = 'load-btn loading';
@@ -273,7 +291,7 @@ function triggerLoad() {
         document.getElementById('loadLabel').textContent = '불러오는 중...';
       }
     }
-  );
+  });
 }
 
 // ── 월 선택 셀렉트 빌드 ──
@@ -311,6 +329,7 @@ function generateReport() {
   else renderWeeklyReport();
   document.getElementById('emptyState').style.display  = 'none';
   document.getElementById('reportDoc').style.display   = 'flex';
+  document.getElementById('mdExportBtn').style.display = '';
 }
 
 // ══════════════════════════════════════════
@@ -325,24 +344,30 @@ function renderMonthlyReport() {
   const fanzaWids   = worksOfPlatform('fanza');
   const dlsiteWids  = worksOfPlatform('dlsite');
 
-  // 집계
-  const netCur   = krw(totalLF(allWids, m));
-  const netPrev  = prev ? krw(totalLF(allWids, prev)) : 0;
-  const totCur   = Math.round(netCur / 0.5);
-  const totPrev  = Math.round(netPrev / 0.5);
-  const salCur   = totalSales(allWids, m);
-  const salPrev  = prev ? totalSales(allWids, prev) : 0;
-  const fnzNet   = krw(totalLF(fanzaWids, m));
-  const fnzPrev  = prev ? krw(totalLF(fanzaWids, prev)) : 0;
-  const dlsNet   = krw(totalLF(dlsiteWids, m));
-  const dlsPrev  = prev ? krw(totalLF(dlsiteWids, prev)) : 0;
-  const netC     = pct(netCur,  netPrev);
-  const totC     = pct(totCur,  totPrev);
-  const salC     = pct(salCur,  salPrev);
+  // 집계 (JPY = 원화 환산 전, KRW = 환산 후)
+  const grossJPY  = totalGross(allWids, m);
+  const grossPJPY = prev ? totalGross(allWids, prev) : 0;
+  const netJPY    = totalNet(allWids, m);
+  const netPJPY   = prev ? totalNet(allWids, prev) : 0;
+  const grossCur  = krw(grossJPY),  grossPrev = krw(grossPJPY);
+  const netCur    = krw(netJPY),    netPrev   = krw(netPJPY);
+  const salCur    = totalSales(allWids, m);
+  const salPrev   = prev ? totalSales(allWids, prev) : 0;
+  const fnzGross  = krw(totalGross(fanzaWids, m));
+  const fnzGrossP = prev ? krw(totalGross(fanzaWids, prev)) : 0;
+  const dlsGross  = krw(totalGross(dlsiteWids, m));
+  const dlsGrossP = prev ? krw(totalGross(dlsiteWids, prev)) : 0;
+  const fnzNet    = krw(totalNet(fanzaWids, m));
+  const dlsNet    = krw(totalNet(dlsiteWids, m));
+  const fnzNetP   = prev ? krw(totalNet(fanzaWids, prev)) : 0;
+  const dlsNetP   = prev ? krw(totalNet(dlsiteWids, prev)) : 0;
+  const grossC    = pct(grossCur, grossPrev);
+  const netC      = pct(netCur,   netPrev);
+  const salC      = pct(salCur,   salPrev);
 
-  // 작품별 순위
+  // 작품별 순위 (총매출 기준)
   const sorted = [...allWids]
-    .sort((a,b) => (AGG[m]?.works[b]?.lf||0) - (AGG[m]?.works[a]?.lf||0));
+    .sort((a,b) => (AGG[m]?.works[b]?.gross||0) - (AGG[m]?.works[a]?.gross||0));
 
   // 계정별 팬수
   const acctIds = [...new Set(allWids.map(wid => WORKS_META[wid].account_id))];
@@ -378,17 +403,17 @@ function renderMonthlyReport() {
             ? `전월 대비 <span class="${salC>=0?'hl-green':'hl-red'}">${salC>=0?'+':''}${salC}%</span>를 기록했으며,`
             : '전월 비교 데이터가 없으며,'}
           연재 작품 ${allWids.length}개 중 상위 작품이 전체 매출의
-          ${totCur > 0 ? Math.round(krw(AGG[m]?.works[sorted[0]]?.lf||0)/netCur*100) : 0}%를 차지했습니다.
+          ${netCur > 0 ? Math.round(krw(AGG[m]?.works[sorted[0]]?.gross||0)/netCur*100) : 0}%를 차지했습니다.
         </p>
       </div>
 
       <!-- KPI -->
       <div class="kpi-row">
         ${[
-          { lbl:'전체 매출',  val:fmtKRW(totCur),  chg:totC,  color:'#e8eaf5' },
-          { lbl:'순 매출',    val:fmtKRW(netCur),  chg:netC,  color:'var(--green)' },
-          { lbl:'총 판매량',  val:salCur.toLocaleString()+'건', chg:salC, color:'var(--amber)' },
-          { lbl:'fanza / dlsite', val:`${fmtKRW(fnzNet)} / ${fmtKRW(dlsNet)}`, chg:null, color:'var(--fanza)' },
+          { lbl:'전체 매출', val:fmtJPYFull(grossJPY)+' ('+fmtKRWFull(grossCur)+')', chg:grossC, color:'#e8eaf5' },
+          { lbl:'순 매출',   val:fmtJPYFull(netJPY)+' ('+fmtKRWFull(netCur)+')',     chg:netC,   color:'var(--green)' },
+          { lbl:'총 판매량', val:salCur.toLocaleString()+'건', chg:salC, color:'var(--amber)' },
+          { lbl:'fanza / dlsite', val:`${fmtKRW(fnzGross)} / ${fmtKRW(dlsGross)}`, chg:null, color:'var(--fanza)' },
         ].map(k => `
           <div class="kpi-box">
             <div class="kpi-box-bar" style="background:linear-gradient(90deg,${k.color},transparent)"></div>
@@ -419,23 +444,25 @@ function renderMonthlyReport() {
           <tbody>
             ${sorted.slice(0,10).map((wid, i) => {
               const wm   = WORKS_META[wid];
-              const lf   = AGG[m]?.works[wid]?.lf||0;
-              const lfP  = prev ? AGG[prev]?.works[wid]?.lf||0 : 0;
+              const lf   = AGG[m]?.works[wid]?.gross||0;
+              const lfP  = prev ? AGG[prev]?.works[wid]?.gross||0 : 0;
               const sal  = AGG[m]?.works[wid]?.sales||0;
               const c    = pct(lf, lfP);
-              const maxLF = AGG[m]?.works[sorted[0]]?.lf || 1;
+              const maxLF = AGG[m]?.works[sorted[0]]?.gross || 1;
               const plc  = wm.platform === 'fanza' ? '#ff6b9d' : '#7c6af5';
               return `<tr>
                 <td><span class="rank-num ${i<3?'top':''}">${String(i+1).padStart(2,'0')}</span></td>
                 <td>
                   <span class="nick-dot" style="background:${wm.color}"></span>
-                  <span style="font-weight:500;">${wm.nick||'—'}</span>
-                  <span style="color:var(--muted);font-size:11px;margin-left:6px;">${wm.title.slice(0,20)}…</span>
+                  <span style="font-weight:500;">${wm.nick_name||wm.nick||'—'}</span>
                 </td>
                 <td><span class="pl-tag ${wm.platform}">${wm.platform}</span></td>
                 <td>
                   <div class="mini-bar-wrap">
-                    ${fmtKRW(krw(lf))}
+                    <div>
+                      <div style="font-size:12px;">${fmtKRW(krw(lf))}</div>
+                      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);">${fmtJPY(lf)}</div>
+                    </div>
                     <div class="mini-bar"><div class="mini-fill" style="width:${Math.round(lf/maxLF*100)}%;background:${plc}"></div></div>
                   </div>
                 </td>
@@ -454,16 +481,16 @@ function renderMonthlyReport() {
       <div class="summary-block">
         <p>
           <span class="hl-fanza">fanza</span>는 순매출 ${fmtKRW(fnzNet)}
-          ${prev ? `(전월 대비 <span class="${pct(fnzNet,fnzPrev)>=0?'hl-green':'hl-red'}">${pct(fnzNet,fnzPrev)>=0?'+':''}${pct(fnzNet,fnzPrev)}%</span>)` : ''},
+          ${prev ? `(전월 대비 <span class="${pct(fnzNet,fnzNetP)>=0?'hl-green':'hl-red'}">${pct(fnzNet,fnzNetP)>=0?'+':''}${pct(fnzNet,fnzNetP)}%</span>)` : ''},
           <span class="hl-dlsite">dlsite</span>는 순매출 ${fmtKRW(dlsNet)}
-          ${prev ? `(전월 대비 <span class="${pct(dlsNet,dlsPrev)>=0?'hl-green':'hl-red'}">${pct(dlsNet,dlsPrev)>=0?'+':''}${pct(dlsNet,dlsPrev)}%</span>)` : ''}를 기록했습니다.
+          ${prev ? `(전월 대비 <span class="${pct(dlsNet,dlsNetP)>=0?'hl-green':'hl-red'}">${pct(dlsNet,dlsNetP)>=0?'+':''}${pct(dlsNet,dlsNetP)}%</span>)` : ''}를 기록했습니다.
           전체 매출 중 fanza 비중은 <span class="hl-fanza">${netCur>0?Math.round(fnzNet/netCur*100):0}%</span>입니다.
         </p>
       </div>
       <div class="platform-compare">
         ${[
-          { pl:'fanza',  wids:fanzaWids,  net:fnzNet,  prev:fnzPrev,  color:'var(--fanza)'  },
-          { pl:'dlsite', wids:dlsiteWids, net:dlsNet,  prev:dlsPrev,  color:'var(--dlsite)' },
+          { pl:'fanza',  wids:fanzaWids,  net:fnzNet,  prev:fnzNetP,  color:'var(--fanza)'  },
+          { pl:'dlsite', wids:dlsiteWids, net:dlsNet,  prev:dlsNetP,  color:'var(--dlsite)' },
         ].map(p => {
           const pSal  = totalSales(p.wids, m);
           const pSalP = prev ? totalSales(p.wids, prev) : 0;
@@ -527,6 +554,15 @@ function renderMonthlyReport() {
   `;
 }
 
+// ── 날짜 정규화: "2025. 12. 17" → "2025-12-17" ──
+function normDate(s) {
+  const parts = String(s).trim().split(/\.\s*/).filter(p => p.trim());
+  if (parts.length === 3) {
+    return parts[0].padStart(4,'0') + '-' + parts[1].padStart(2,'0') + '-' + parts[2].padStart(2,'0');
+  }
+  return String(s).trim().slice(0, 10);
+}
+
 // ══════════════════════════════════════════
 //  주간 보고서
 // ══════════════════════════════════════════
@@ -542,18 +578,18 @@ function renderWeeklyReport() {
   const doc  = document.getElementById('reportDoc');
   const now  = new Date();
 
-  // 주간 데이터: crawl_date가 범위 내인 RAW 필터
+  // 주간 데이터: crawl_Date_2가 범위 내인 RAW 필터 (문자열 비교)
   const inRange = RAW.filter(r => {
-    if (!r.crawl_date) return false;
-    const d = new Date(r.crawl_date);
-    return d >= startDate && d <= endDate;
+    if (!r.crawl_Date_2) return false;
+    const d = normDate(r.crawl_Date_2);
+    return d >= startStr && d <= endStr;
   });
 
   if (!inRange.length) {
     doc.innerHTML = `
       <div class="doc-header">
-        <div class="doc-type">Weekly Report</div>
-        <div class="doc-title">${startStr} ~ ${endStr} 주간 보고서</div>
+        <div class="doc-type">Range Dashboard</div>
+        <div class="doc-title">${startStr} ~ ${endStr} 구간 대시보드</div>
       </div>
       <div class="empty-state">
         <div class="empty-icon">🔍</div>
@@ -566,8 +602,9 @@ function renderWeeklyReport() {
   const wAGG = {};
   for (const r of inRange) {
     const wid = r.work_id;
-    if (!wAGG[wid]) wAGG[wid] = { lf:0, sales:0 };
-    wAGG[wid].lf    += parseNum(r.LF_revenue);
+    if (!wAGG[wid]) wAGG[wid] = { gross:0, net:0, sales:0 };
+    wAGG[wid].gross += parseNum(r.revenue_DoD);
+    wAGG[wid].net   += parseNum(r.LF_revenue);
     wAGG[wid].sales += parseNum(r.sales_count_DoD);
   }
 
@@ -576,27 +613,31 @@ function renderWeeklyReport() {
   const dlsiteWids = worksOfPlatform('dlsite');
   const acctIds    = [...new Set(allWids.map(wid => WORKS_META[wid].account_id))];
 
-  const totalNet  = krw(allWids.reduce((s,wid) => s + (wAGG[wid]?.lf||0), 0));
-  const totalSal  = allWids.reduce((s,wid) => s + (wAGG[wid]?.sales||0), 0);
-  const fnzNet    = krw(fanzaWids.reduce((s,wid)  => s + (wAGG[wid]?.lf||0), 0));
-  const dlsNet    = krw(dlsiteWids.reduce((s,wid) => s + (wAGG[wid]?.lf||0), 0));
+  const totalGrossJPY = allWids.reduce((s,wid) => s + (wAGG[wid]?.gross||0), 0);
+  const totalNetJPY   = allWids.reduce((s,wid) => s + (wAGG[wid]?.net||0), 0);
+  const fnzGrossJPY   = fanzaWids.reduce((s,wid)  => s + (wAGG[wid]?.gross||0), 0);
+  const dlsGrossJPY   = dlsiteWids.reduce((s,wid) => s + (wAGG[wid]?.gross||0), 0);
+  const totalSal      = allWids.reduce((s,wid) => s + (wAGG[wid]?.sales||0), 0);
 
-  const sorted = allWids.slice().sort((a,b) => (wAGG[b]?.lf||0) - (wAGG[a]?.lf||0));
+  const sorted = allWids.slice().sort((a,b) => (wAGG[b]?.gross||0) - (wAGG[a]?.gross||0));
 
-  // 팬수: 범위 내 최신 크롤 기준
+  // 팬수: 범위 내 최신 크롤 기준 (crawl_Date_2 정규화 후 비교)
   const fanLatest = {};
   for (const r of inRange) {
     const aid = r.account_id;
-    if (!fanLatest[aid] || r.crawl_date > fanLatest[aid].date) {
-      fanLatest[aid] = { date: r.crawl_date, fans: parseInt(r.fans)||0 };
+    const nd  = normDate(r.crawl_Date_2);
+    if (!nd) continue;
+    if (r.platform !== 'fanza') continue;
+    if (!fanLatest[aid] || nd > fanLatest[aid].date) {
+      fanLatest[aid] = { date: nd, fans: parseInt(r.fans)||0 };
     }
   }
 
   doc.innerHTML = `
     <!-- 문서 헤더 -->
     <div class="doc-header">
-      <div class="doc-type">Weekly Report</div>
-      <div class="doc-title">${startStr} ~ ${endStr}<br>주간 작품 성과 보고서</div>
+      <div class="doc-type">Range Dashboard</div>
+      <div class="doc-title">${startStr} ~ ${endStr}<br>구간 작품 성과 지표</div>
       <div class="doc-meta">
         <div class="doc-meta-item">생성일 <span>${now.toLocaleDateString('ko-KR')}</span></div>
         <div class="doc-meta-item">수집 데이터 <span>${inRange.length}건</span></div>
@@ -604,67 +645,52 @@ function renderWeeklyReport() {
       </div>
     </div>
 
-    <!-- 1. 핵심 요약 -->
-    <div class="doc-section">
-      <div class="doc-section-title">핵심 요약</div>
-      <div class="summary-block">
-        <p>
-          ${startStr} ~ ${endStr} 기간 중 전체 순매출은
-          <span class="hl-green">${fmtKRW(totalNet)}</span>이며,
-          총 <span class="hl-amber">${totalSal.toLocaleString()}건</span>의 판매가 발생했습니다.
-        </p>
-        <p>
-          플랫폼별로는 <span class="hl-fanza">fanza ${fmtKRW(fnzNet)}</span>,
-          <span class="hl-dlsite">dlsite ${fmtKRW(dlsNet)}</span>로 집계되었으며,
-          fanza 비중은 <span class="hl-fanza">${totalNet>0?Math.round(fnzNet/totalNet*100):0}%</span>입니다.
-        </p>
-      </div>
-      <div class="kpi-row">
-        ${[
-          { lbl:'주간 순매출',  val:fmtKRW(totalNet), color:'var(--green)' },
-          { lbl:'주간 판매량',  val:totalSal.toLocaleString()+'건', color:'var(--amber)' },
-          { lbl:'fanza',       val:fmtKRW(fnzNet),   color:'var(--fanza)' },
-          { lbl:'dlsite',      val:fmtKRW(dlsNet),   color:'var(--dlsite)' },
-        ].map(k => `
-          <div class="kpi-box">
-            <div class="kpi-box-bar" style="background:linear-gradient(90deg,${k.color},transparent)"></div>
-            <div class="kpi-box-lbl">${k.lbl}</div>
-            <div class="kpi-box-val">${k.val}</div>
-          </div>`).join('')}
-      </div>
+    <!-- KPI -->
+    <div class="kpi-row" style="margin-bottom:32px;">
+      ${[
+        { lbl:'전체 매출', val:rFmtFull(totalGrossJPY), color:'#e8eaf5' },
+        { lbl:'순매출',    val:rFmtFull(totalNetJPY),   color:'var(--green)' },
+        { lbl:'판매량',    val:totalSal.toLocaleString()+'건', color:'var(--amber)' },
+        { lbl:'계정별 매출',    val:acctIds.map(aid => '<span style="font-size:11px;color:'+ACCT_META[aid].color+';">'+aid+'</span>&nbsp;<span style="font-size:16px;">'+rFmt(worksOfAcct(aid).reduce((s,wid)=>s+(wAGG[wid]?.gross||0),0))+'</span>').join('<br>'), color:'var(--sky)' },
+      ].map(k => '<div class="kpi-box">'
+        + '<div class="kpi-box-bar" style="background:linear-gradient(90deg,'+k.color+',transparent)"></div>'
+        + '<div class="kpi-box-lbl">'+k.lbl+'</div>'
+        + '<div class="kpi-box-val">'+k.val+'</div>'
+        + '</div>').join('')}
     </div>
 
-    <!-- 2. 작품별 순위 -->
+    <!-- 1. 작품별 순위 -->
     <div class="doc-section">
-      <div class="doc-section-title">작품별 순매출 순위 (주간)</div>
+      <div class="doc-section-title">작품별 순매출 순위</div>
       <div class="summary-block" style="padding:0;overflow:hidden;">
         <table class="rank-table">
           <thead>
             <tr><th style="width:32px;">#</th><th>작품</th><th>플랫폼</th><th>순매출</th><th>판매량</th></tr>
           </thead>
           <tbody>
-            ${sorted.filter(wid => (wAGG[wid]?.lf||0) > 0).slice(0,10).map((wid, i) => {
+            ${sorted.filter(wid => (wAGG[wid]?.gross||0) > 0).slice(0,10).map((wid, i) => {
               const wm  = WORKS_META[wid];
-              const lf  = wAGG[wid]?.lf||0;
+              const lf  = wAGG[wid]?.gross||0;
               const sal = wAGG[wid]?.sales||0;
-              const maxLF = wAGG[sorted[0]]?.lf||1;
+              const maxLF = wAGG[sorted[0]]?.gross||1;
               const plc = wm.platform === 'fanza' ? '#ff6b9d' : '#7c6af5';
-              return `<tr>
-                <td><span class="rank-num ${i<3?'top':''}">${String(i+1).padStart(2,'0')}</span></td>
-                <td>
-                  <span class="nick-dot" style="background:${wm.color}"></span>
-                  <span style="font-weight:500;">${wm.nick||'—'}</span>
-                  <span style="color:var(--muted);font-size:11px;margin-left:6px;">${wm.title.slice(0,20)}…</span>
-                </td>
-                <td><span class="pl-tag ${wm.platform}">${wm.platform}</span></td>
-                <td>
-                  <div class="mini-bar-wrap">
-                    ${fmtKRW(krw(lf))}
-                    <div class="mini-bar"><div class="mini-fill" style="width:${Math.round(lf/maxLF*100)}%;background:${plc}"></div></div>
-                  </div>
-                </td>
-                <td style="font-family:'DM Mono',monospace;font-size:11px;">${sal.toLocaleString()}</td>
-              </tr>`;
+              return '<tr>'
+                + '<td><span class="rank-num ' + (i<3?'top':'') + '">' + String(i+1).padStart(2,'0') + '</span></td>'
+                + '<td>'
+                + '<span class="nick-dot" style="background:' + wm.color + '"></span>'
+                + '<span style="font-weight:500;">' + (wm.nick_name||wm.nick||'—') + '</span>'
+                + '</td>'
+                + '<td><span class="pl-tag ' + wm.platform + '">' + wm.platform + '</span></td>'
+                + '<td>'
+                + '<div class="mini-bar-wrap">'
+                + '<div>'
+                + '<div style="font-size:12px;">' + rFmt(lf) + '</div>'
+                + '</div>'
+                + '<div class="mini-bar"><div class="mini-fill" style="width:' + Math.round(lf/maxLF*100) + '%;background:' + plc + '"></div></div>'
+                + '</div>'
+                + '</td>'
+                + '<td style="font-family:\'DM Mono\',monospace;font-size:11px;">' + sal.toLocaleString() + '</td>'
+                + '</tr>';
             }).join('')}
           </tbody>
         </table>
@@ -673,11 +699,11 @@ function renderWeeklyReport() {
 
     <!-- 3. 플랫폼별 비교 -->
     <div class="doc-section">
-      <div class="doc-section-title">플랫폼별 비교 (주간)</div>
+      <div class="doc-section-title">플랫폼별 비교</div>
       <div class="platform-compare">
         ${[
-          { pl:'fanza',  wids:fanzaWids,  net:fnzNet,  color:'var(--fanza)'  },
-          { pl:'dlsite', wids:dlsiteWids, net:dlsNet,  color:'var(--dlsite)' },
+          { pl:'fanza',  wids:fanzaWids,  grossJPY:fnzGrossJPY, color:'var(--fanza)'  },
+          { pl:'dlsite', wids:dlsiteWids, grossJPY:dlsGrossJPY, color:'var(--dlsite)' },
         ].map(p => {
           const pSal = p.wids.reduce((s,wid) => s + (wAGG[wid]?.sales||0), 0);
           return `<div class="pl-box">
@@ -685,9 +711,9 @@ function renderWeeklyReport() {
               <span class="pl-box-name ${p.pl}">${p.pl}</span>
               <span class="pl-tag ${p.pl}">${p.wids.length}개 작품</span>
             </div>
-            <div class="pl-stat-row"><span class="pl-stat-lbl">순매출</span><span class="pl-stat-val">${fmtKRW(p.net)}</span></div>
+            <div class="pl-stat-row"><span class="pl-stat-lbl">순매출</span><span class="pl-stat-val">${rFmt(p.grossJPY)}</span></div>
             <div class="pl-stat-row"><span class="pl-stat-lbl">판매량</span><span class="pl-stat-val">${pSal.toLocaleString()}건</span></div>
-            <div class="pl-stat-row"><span class="pl-stat-lbl">전체 비중</span><span class="pl-stat-val">${totalNet>0?Math.round(p.net/totalNet*100):0}%</span></div>
+            <div class="pl-stat-row"><span class="pl-stat-lbl">전체 비중</span><span class="pl-stat-val">${totalGrossJPY>0?Math.round(p.grossJPY/totalGrossJPY*100):0}%</span></div>
           </div>`;
         }).join('')}
       </div>
@@ -695,7 +721,7 @@ function renderWeeklyReport() {
 
     <!-- 4. 계정별 팬수 -->
     <div class="doc-section">
-      <div class="doc-section-title">계정별 팬수 (주간 최신 기준)</div>
+      <div class="doc-section-title">계정별 팬수 (기간 내 최신 기준)</div>
       <div class="fan-list">
         ${acctIds.map(aid => {
           const ac   = ACCT_META[aid];
@@ -715,6 +741,125 @@ function renderWeeklyReport() {
       </div>
     </div>
   `;
+}
+
+// ══════════════════════════════════════════
+//  MD 내보내기
+// ══════════════════════════════════════════
+function buildMonthlyMd() {
+  const m    = document.getElementById('monSelect').value;
+  const prev = prevMon(m);
+  const allWids    = Object.keys(WORKS_META);
+  const fanzaWids  = worksOfPlatform('fanza');
+  const dlsiteWids = worksOfPlatform('dlsite');
+  const netCur  = krw(totalLF(allWids, m));
+  const netPrev = prev ? krw(totalLF(allWids, prev)) : 0;
+  const salCur  = totalSales(allWids, m);
+  const salPrev = prev ? totalSales(allWids, prev) : 0;
+  const fnzNet  = krw(totalLF(fanzaWids, m));
+  const dlsNet  = krw(totalLF(dlsiteWids, m));
+  const netC    = pct(netCur, netPrev);
+  const salC    = pct(salCur, salPrev);
+  const sorted  = [...allWids].sort((a,b) => (AGG[m]?.works[b]?.gross||0) - (AGG[m]?.works[a]?.gross||0));
+
+  var md = '';
+  md += '# ' + m + '월 작품 성과 보고서\n\n';
+  md += '## 핵심 지표\n\n';
+  md += '| 항목 | 값 | 전월 대비 |\n';
+  md += '|------|-----|----------|\n';
+  md += '| 순매출 | ' + fmtKRW(netCur) + ' | ' + (prev ? (netC >= 0 ? '▲ ' : '▼ ') + Math.abs(netC) + '%' : '—') + ' |\n';
+  md += '| 총 판매량 | ' + salCur.toLocaleString() + '건 | ' + (prev ? (salC >= 0 ? '▲ ' : '▼ ') + Math.abs(salC) + '%' : '—') + ' |\n';
+  md += '| fanza | ' + fmtKRW(fnzNet) + ' | — |\n';
+  md += '| dlsite | ' + fmtKRW(dlsNet) + ' | — |\n\n';
+
+  md += '## 작품별 순매출 순위\n\n';
+  md += '| # | 작품 | 플랫폼 | 순매출 (KRW) | 순매출 (JPY) | 판매량 |\n';
+  md += '|---|------|--------|-------------|-------------|--------|\n';
+  sorted.slice(0,10).forEach(function(wid, i) {
+    var wm  = WORKS_META[wid];
+    var lf  = AGG[m] && AGG[m].works[wid] ? AGG[m].works[wid].gross : 0;
+    var sal = AGG[m] && AGG[m].works[wid] ? AGG[m].works[wid].sales : 0;
+    var lp  = prev && AGG[prev] && AGG[prev].works[wid] ? AGG[prev].works[wid].gross : 0;
+    var c   = pct(lf, lp);
+    md += '| ' + (i+1) + ' | ' + (wm.nick_name||wm.nick||'—') + ' | ' + wm.platform + ' | ' + fmtKRW(krw(lf)) + ' | ' + fmtJPY(lf) + ' | ' + sal.toLocaleString() + ' |\n';
+  });
+  md += '\n';
+
+  var acctIds = Array.from(new Set(allWids.map(function(wid) { return WORKS_META[wid].account_id; })));
+  md += '## 계정별 팬수\n\n';
+  md += '| 계정 | 팬수 | 전월 대비 |\n';
+  md += '|------|------|-----------|\n';
+  acctIds.forEach(function(aid) {
+    var fans  = AGG[m] && AGG[m].accounts[aid] ? AGG[m].accounts[aid] : 0;
+    var fanP  = prev && AGG[prev] && AGG[prev].accounts[aid] ? AGG[prev].accounts[aid] : 0;
+    var diff  = fans - fanP;
+    md += '| ' + aid + ' | ' + fans.toLocaleString() + '명 | ' + (prev ? (diff >= 0 ? '+' : '') + diff.toLocaleString() + '명' : '—') + ' |\n';
+  });
+  return md;
+}
+
+function buildWeeklyMd() {
+  var startStr = document.getElementById('weekStart').value;
+  var endStr   = document.getElementById('weekEnd').value;
+  var inRange  = RAW.filter(function(r) {
+    if (!r.crawl_Date_2) return false;
+    var d = normDate(r.crawl_Date_2);
+    return d >= startStr && d <= endStr;
+  });
+
+  var wAGG = {};
+  inRange.forEach(function(r) {
+    var wid = r.work_id;
+    if (!wAGG[wid]) wAGG[wid] = { gross:0, net:0, sales:0 };
+    wAGG[wid].gross += parseNum(r.revenue_DoD);
+    wAGG[wid].net   += parseNum(r.LF_revenue);
+    wAGG[wid].sales += parseNum(r.sales_count_DoD);
+  });
+
+  var allWids    = Object.keys(WORKS_META);
+  var fanzaWids  = worksOfPlatform('fanza');
+  var dlsiteWids = worksOfPlatform('dlsite');
+  var totalGrossJPY = allWids.reduce(function(s,wid) { return s + (wAGG[wid] ? wAGG[wid].gross : 0); }, 0);
+  var fnzGrossJPY   = fanzaWids.reduce(function(s,wid) { return s + (wAGG[wid] ? wAGG[wid].gross : 0); }, 0);
+  var dlsGrossJPY   = dlsiteWids.reduce(function(s,wid) { return s + (wAGG[wid] ? wAGG[wid].gross : 0); }, 0);
+  var totalNet    = krw(totalGrossJPY);
+  var totalSal    = allWids.reduce(function(s,wid) { return s + (wAGG[wid] ? wAGG[wid].sales : 0); }, 0);
+  var fnzNet      = krw(fnzGrossJPY);
+  var dlsNet      = krw(dlsGrossJPY);
+  var sorted      = allWids.slice().sort(function(a,b) { return (wAGG[b]?wAGG[b].gross:0) - (wAGG[a]?wAGG[a].gross:0); });
+
+  var md = '';
+  md += '# ' + startStr + ' ~ ' + endStr + ' 구간 작품 성과 지표\n\n';
+  md += '## 핵심 지표\n\n';
+  md += '| 항목 | KRW | JPY |\n';
+  md += '|------|-----|-----|\n';
+  md += '| 순매출 | ' + fmtKRW(totalNet) + ' | ' + fmtJPY(totalGrossJPY) + ' |\n';
+  md += '| fanza | ' + fmtKRW(fnzNet) + ' | ' + fmtJPY(fnzGrossJPY) + ' |\n';
+  md += '| dlsite | ' + fmtKRW(dlsNet) + ' | ' + fmtJPY(dlsGrossJPY) + ' |\n';
+  md += '| 판매량 | ' + totalSal.toLocaleString() + '건 | — |\n\n';
+
+  md += '## 작품별 순매출 순위\n\n';
+  md += '| # | 작품 | 플랫폼 | 순매출 (KRW) | 순매출 (JPY) | 판매량 |\n';
+  md += '|---|------|--------|-------------|-------------|--------|\n';
+  sorted.filter(function(wid) { return wAGG[wid] && wAGG[wid].gross > 0; }).slice(0,10).forEach(function(wid, i) {
+    var wm  = WORKS_META[wid];
+    var lf  = wAGG[wid] ? wAGG[wid].gross : 0;
+    var sal = wAGG[wid] ? wAGG[wid].sales : 0;
+    md += '| ' + (i+1) + ' | ' + (wm.nick_name||wm.nick||'—') + ' | ' + wm.platform + ' | ' + fmtKRW(krw(lf)) + ' | ' + fmtJPY(lf) + ' | ' + sal.toLocaleString() + ' |\n';
+  });
+  return md;
+}
+
+function exportMarkdown() {
+  var md = reportType === 'monthly' ? buildMonthlyMd() : buildWeeklyMd();
+  var blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  var now  = new Date();
+  a.href     = url;
+  a.download = 'report_' + now.toISOString().slice(0,10) + '.md';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── 초기화 ──

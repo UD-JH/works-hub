@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>작품 대시보드</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 :root {
   --bg:#07080f; --surface:#0f1018; --surface2:#161820; --surface3:#1d1f2c;
-  --border:#232535; --text:#e8eaf5; --muted:#52546e;
+  --border:#232535; --text:#e8eaf5; --muted:#8a8ca8;
   --green:#3ecf8e; --amber:#f5a623; --red:#f55252; --sky:#38bdf8;
   --fanza:#ff6b9d; --dlsite:#7c6af5;
 }
@@ -36,6 +36,16 @@ body::after{content:'';position:fixed;top:-180px;left:50%;transform:translateX(-
 .fx-unit{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);padding-right:8px;}
 .fx-apply{font-family:'DM Mono',monospace;font-size:10px;padding:6px 12px;border-radius:7px;background:var(--fanza);color:#fff;border:none;cursor:pointer;transition:filter .15s;white-space:nowrap;}
 .fx-apply:hover{filter:brightness(1.15);}
+
+/* Home button */
+.home-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);text-decoration:none;transition:all .15s;flex-shrink:0;}
+.home-btn:hover{color:var(--text);border-color:#36384f;}
+.home-btn svg{width:14px;height:14px;}
+
+/* Currency toggle */
+.curr-btn{font-family:'DM Mono',monospace;font-size:10px;padding:5px 12px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .15s;letter-spacing:.05em;}
+.curr-btn:hover{border-color:#36384f;color:var(--text);}
+.curr-btn.active{background:var(--dlsite);color:#fff;border-color:transparent;}
 
 /* Load button */
 .load-btn{font-family:'DM Mono',monospace;font-size:10px;padding:6px 12px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;}
@@ -68,26 +78,27 @@ body::after{content:'';position:fixed;top:-180px;left:50%;transform:translateX(-
 .kpi:hover{border-color:#36384f;transform:translateY(-2px);}
 .kpi-bar{position:absolute;top:0;left:0;right:0;height:2px;}
 .kpi-icon{font-size:17px;margin-bottom:8px;}
-.kpi-lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
-.kpi-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.04em;line-height:1;}
+.kpi-lbl{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.kpi-val{font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.01em;line-height:1.1;}
 .kpi-sub{display:flex;align-items:center;gap:5px;margin-top:6px;}
-.kpi-note{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:3px;}
-.chg{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;}
+.kpi-note{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:3px;}
+.chg{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;}
 .chg.up{color:var(--green);}
 .chg.dn{color:var(--red);}
-.chg-base{font-size:11px;color:var(--muted);}
+.chg-base{font-size:12px;color:var(--muted);}
 
 /* Cards */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
 .card-head{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 20px 0;gap:10px;}
-.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
-.card-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+.card-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
+.card-sub{font-size:12px;color:var(--muted);margin-top:3px;}
 .card-body{padding:12px 20px 18px;}
 canvas{max-height:200px;}
+#mlyAreaCanvas,#mlyBarCanvas{max-height:none !important;}
 
 /* Chart tabs */
 .chart-tabs{display:flex;gap:3px;flex-shrink:0;}
-.chart-tab{font-family:'DM Mono',monospace;font-size:10px;padding:4px 10px;border-radius:6px;cursor:pointer;border:1px solid var(--border);color:var(--muted);transition:all .15s;white-space:nowrap;}
+.chart-tab{font-family:'DM Mono',monospace;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;border:1px solid var(--border);color:var(--muted);transition:all .15s;white-space:nowrap;}
 .chart-tab.active{background:var(--surface3);border-color:#36384f;color:var(--text);}
 .chart-tab.fanza.active{background:rgba(255,107,157,.15);border-color:var(--fanza);color:var(--fanza);}
 .chart-tab.dlsite.active{background:rgba(124,106,245,.15);border-color:var(--dlsite);color:var(--dlsite);}
@@ -111,13 +122,13 @@ canvas{max-height:200px;}
 .acct-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .acct-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .acct-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
-.acct-concept{font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:5px;background:var(--surface2);color:var(--muted);}
+.acct-concept{font-family:'DM Mono',monospace;font-size:11px;padding:3px 8px;border-radius:5px;background:var(--surface2);color:var(--muted);}
 .acct-right{text-align:right;}
-.acct-fans-val{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;}
-.acct-fans-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);}
-.acct-fans-chg{font-family:'DM Mono',monospace;font-size:10px;color:var(--green);}
+.acct-fans-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;}
+.acct-fans-lbl{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+.acct-fans-chg{font-family:'DM Mono',monospace;font-size:11px;color:var(--green);}
 .acct-body{padding:12px 18px;}
-.acct-stats{display:flex;justify-content:space-between;margin-bottom:10px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.acct-stats{display:flex;justify-content:space-between;margin-bottom:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
 .acct-open-hint{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-align:right;margin-top:8px;}
 
 /* Work rows */
@@ -127,14 +138,15 @@ canvas{max-height:200px;}
 .work-nick{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
 .work-info{flex:1;min-width:0;}
 .work-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.work-meta{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);}
+.work-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
 .work-right{text-align:right;flex-shrink:0;}
 .work-rev{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
 .work-chg{font-family:'DM Mono',monospace;font-size:10px;}
 
 /* Table */
 .data-table{width:100%;border-collapse:collapse;}
-.data-table th{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);}
+.data-table th{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);transition:color .15s;}
+.data-table th[onclick]:hover{color:var(--text);}
 .data-table td{padding:11px 14px;font-size:13px;border-bottom:1px solid rgba(35,37,53,.5);transition:background .15s;}
 .data-table tr:last-child td{border-bottom:none;}
 .data-table tbody tr{cursor:pointer;}
@@ -142,12 +154,12 @@ canvas{max-height:200px;}
 .bar-cell{display:flex;align-items:center;gap:8px;}
 .mini-bar{width:55px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;flex-shrink:0;}
 .mini-fill{height:100%;border-radius:2px;}
-.tag{display:inline-block;font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:4px;}
+.tag{display:inline-block;font-size:11px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:4px;}
 .tag-g{background:rgba(62,207,142,.12);color:var(--green);}
 .tag-a{background:rgba(245,166,35,.12);color:var(--amber);}
 .tag-s{background:rgba(56,189,248,.12);color:var(--sky);}
 .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;}
-.pl-badge{font-family:'DM Mono',monospace;font-size:9px;padding:2px 6px;border-radius:4px;}
+.pl-badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 6px;border-radius:4px;}
 .pl-badge.fanza{background:rgba(255,107,157,.12);color:var(--fanza);}
 .pl-badge.dlsite{background:rgba(124,106,245,.12);color:var(--dlsite);}
 
@@ -159,15 +171,15 @@ canvas{max-height:200px;}
 .modal-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .modal-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
 .modal-close:hover{background:var(--red);border-color:var(--red);color:#fff;}
-.modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:3px;padding-right:40px;}
+.modal-title{font-family:'Noto Sans KR',sans-serif;font-size:18px;font-weight:700;margin-bottom:3px;padding-right:40px;}
 .modal-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:16px;}
 .modal-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
 .modal-kpi{background:var(--surface2);border-radius:10px;padding:12px 14px;}
-.modal-kpi-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
-.modal-kpi-val{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;}
+.modal-kpi-lbl{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.modal-kpi-val{font-family:'Noto Sans KR',sans-serif;font-size:18px;font-weight:700;}
 .modal-charts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .modal-chart-wrap{background:var(--surface2);border-radius:10px;padding:14px;}
-.modal-chart-lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.modal-chart-lbl{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
 .acct-modal-works{margin-top:14px;}
 .acct-modal-work-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:var(--surface2);margin-bottom:6px;cursor:pointer;transition:background .15s;}
 .acct-modal-work-row:hover{background:var(--surface3);}
@@ -176,6 +188,39 @@ canvas{max-height:200px;}
 .no-data{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px;color:var(--muted);}
 .no-data-icon{font-size:36px;opacity:.4;}
 .no-data-text{font-family:'DM Mono',monospace;font-size:12px;}
+
+/* Lifecycle page */
+.lc-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.lc-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;}
+.lc-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;}
+.lc-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.lc-btn{font-family:'DM Mono',monospace;font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;border:1px solid var(--border);color:var(--muted);background:var(--surface2);transition:all .15s;white-space:nowrap;}
+.lc-btn:hover{color:var(--text);border-color:#36384f;}
+.lc-btn.active{background:var(--surface3);border-color:#36384f;color:var(--text);}
+.lc-work-list{display:flex;flex-direction:column;gap:12px;margin-bottom:4px;}
+.lc-platform-section{display:flex;flex-direction:column;gap:8px;}
+.lc-acct-group{display:flex;flex-direction:column;gap:6px;padding-left:8px;}
+.lc-acct-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 0;display:flex;align-items:center;gap:8px;}
+.lc-acct-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.lc-acct-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.lc-work-chip{font-family:'DM Mono',monospace;font-size:11px;padding:5px 12px;border-radius:20px;cursor:pointer;border:2px solid transparent;transition:all .15s;opacity:.5;}
+.lc-work-chip.active{opacity:1;}
+.lc-chart-tabs{display:flex;gap:4px;}
+.lc-chart-tab{font-family:'DM Mono',monospace;font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;border:1px solid var(--border);color:var(--muted);background:var(--surface2);transition:all .15s;}
+.lc-chart-tab.active{background:var(--surface3);border-color:#36384f;color:var(--text);}
+.lc-range{display:flex;align-items:center;gap:6px;}
+.lc-range input{width:60px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:5px 8px;border-radius:7px;outline:none;text-align:center;}
+.lc-range input:focus{border-color:#36384f;}
+.lc-chart-wrap canvas{max-height:440px !important;}
+.lc-legend-note{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:6px;}
+.lc-data-table{width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:12px;}
+.lc-data-table th{position:sticky;top:0;background:var(--card);padding:6px 10px;text-align:center;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;font-size:12px;}
+.lc-data-table th.lc-th-work{text-align:left;min-width:110px;}
+.lc-data-table td{padding:5px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--text);}
+.lc-data-table td.lc-td-work{text-align:left;font-size:11px;}
+.lc-data-table td.lc-td-est{opacity:.4;}
+.lc-data-table tr:last-child td{border-bottom:none;}
+.lc-data-table tr:hover td{background:rgba(255,255,255,.03);}
 </style>
 </head>
 <body>
@@ -186,10 +231,17 @@ canvas{max-height:200px;}
 </div>
 
 <div class="header">
-  <div class="logo"><div class="logo-dot"></div>작품 대시보드</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <a class="home-btn" href="/index.html" title="허브로 돌아가기" aria-label="허브로 돌아가기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5L12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
+    </a>
+    <div class="logo"><div class="logo-dot"></div>작품 대시보드</div>
+  </div>
   <div class="nav-tabs">
     <div class="nav-tab active" onclick="goPage('overview',this)">📊 오버뷰</div>
-    <div class="nav-tab" onclick="goPage('accounts',this)">🗂 계정별</div>
+    <div class="nav-tab" onclick="goPage('accounts',this)">📋 작품별</div>
+    <div class="nav-tab" onclick="goPage('lifecycle',this)">📈 라이프사이클</div>
+    <div class="nav-tab" onclick="goPage('monthly',this)">📅 월간 추이</div>
     <a class="nav-tab" href="report.html" style="text-decoration:none;">📄 보고서</a>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
@@ -201,7 +253,7 @@ canvas{max-height:200px;}
       </div>
       <button class="fx-apply" onclick="applyFx()">적용</button>
     </div>
-    <button class="load-btn" id="loadBtn" onclick="triggerLoad()">
+    <button class="load-btn" id="loadBtn" onclick="triggerLoad(true)">
       <span id="loadIcon">↻</span> <span id="loadLabel">데이터 불러오기</span>
     </button>
   </div>
@@ -213,47 +265,147 @@ canvas{max-height:200px;}
     <div>
       <div class="sec-label">이번 달 핵심 지표</div>
     </div>
-    <div class="month-sel-wrap" id="monthBtns"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="curr-btn" id="ovCurrBtn" onclick="toggleOvCurrency()">KRW</button>
+      <div class="month-sel-wrap" id="monthBtns"></div>
+    </div>
   </div>
   <div class="kpi-grid" id="kpiGrid"></div>
 
-  <div class="card">
-    <div class="card-head">
-      <div><div class="card-title">월별 매출 추이</div><div class="card-sub">전체 합산 및 플랫폼별</div></div>
-      <div class="chart-tabs">
-        <div class="chart-tab active" onclick="switchRevTab('all',this)">전체</div>
-        <div class="chart-tab fanza" onclick="switchRevTab('fanza',this)">fanza</div>
-        <div class="chart-tab dlsite" onclick="switchRevTab('dlsite',this)">dlsite</div>
-      </div>
-    </div>
-    <div class="card-body"><canvas id="revChart"></canvas></div>
-  </div>
-
   <div class="row21">
     <div class="card">
-      <div class="card-head"><div><div class="card-title">작품별 순매출 TOP 10</div><div class="card-sub" id="topTableSub"></div></div></div>
-      <table class="data-table" id="topTable"></table>
+      <div class="card-head">
+        <div><div class="card-title">월별 매출 추이</div><div class="card-sub">전체 합산 및 플랫폼별</div></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="chart-tabs" id="revTypeTabs">
+            <div class="chart-tab active" onclick="switchRevType('line',this)">라인</div>
+            <div class="chart-tab" onclick="switchRevType('bar',this)">막대</div>
+          </div>
+          <div style="width:1px;height:14px;background:var(--border);"></div>
+          <div class="chart-tabs" id="revModeTabs">
+            <div class="chart-tab active" onclick="switchRevTab('all',this)">전체</div>
+            <div class="chart-tab fanza" onclick="switchRevTab('fanza',this)">fanza</div>
+            <div class="chart-tab dlsite" onclick="switchRevTab('dlsite',this)">dlsite</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body"><canvas id="revChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-head"><div><div class="card-title">작품별 매출 비중</div><div class="card-sub" id="donutSub"></div></div></div>
-      <div class="card-body"><canvas id="workDonut"></canvas></div>
+      <div class="card-head"><div><div class="card-title">계정별 순매출</div><div class="card-sub" id="acctSummarySub"></div></div></div>
+      <table class="data-table" id="acctSummary"></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div><div class="card-title">작품별 순매출 TOP 10</div><div class="card-sub" id="topTableSub"></div></div><div id="topTableFilterWrap" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"></div></div>
+    <table class="data-table" id="topTable"></table>
+  </div>
+</div>
+
+<!-- PAGE: 작품별 -->
+<div class="page" id="page-accounts">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div class="sec-label" style="margin-bottom:0;">작품별 속성</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <button class="curr-btn" id="wtCurrBtn" onclick="toggleOvCurrency()">KRW</button>
+      <div class="month-sel-wrap" id="monthBtns2"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="worksFilterWrap"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:10px;overflow-x:auto;">
+    <table id="worksTable" class="data-table"></table>
+  </div>
+</div>
+
+<!-- PAGE: 라이프사이클 -->
+<div class="page" id="page-lifecycle">
+  <div class="lc-header">
+    <div>
+      <div class="lc-title">라이프사이클</div>
+      <div class="lc-sub">출시 후 경과일(age) 기반 일일 매출 곡선 비교</div>
+    </div>
+    <div class="lc-controls">
+      <div class="lc-range">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">age</span>
+        <input type="number" id="lcAgeMin" value="0" min="0" placeholder="min">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">~</span>
+        <input type="number" id="lcAgeMax" value="180" min="0" placeholder="max">
+        <button class="lc-btn" onclick="applyLcRange()">적용</button>
+        <button class="lc-btn" onclick="resetLcRange()">초기화</button>
+      </div>
+      <button class="lc-btn" id="lcEstBtn" onclick="toggleLcEst()">추정치 숨기기</button>
+      <button class="lc-btn" id="lcMaBtn" onclick="toggleLcMa()">7일 이동평균</button>
+      <button class="lc-btn" id="lcCurrBtn" onclick="toggleLcCurrency()">KRW</button>
+      <button class="lc-btn" id="lcThemeBtn" onclick="toggleLcTheme()">☀ 라이트</button>
+    </div>
+  </div>
+  <div class="lc-work-list" id="lcWorkList"></div>
+  <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+    <button class="lc-btn" onclick="lcSelectAll(true)">전체 선택</button>
+    <button class="lc-btn" onclick="lcSelectAll(false)">전체 해제</button>
+    <button class="lc-btn" onclick="lcSelectPlatform('fanza',true)" style="color:var(--fanza);">fanza만</button>
+    <button class="lc-btn" onclick="lcSelectPlatform('dlsite',true)" style="color:var(--dlsite);">dlsite만</button>
+    <button class="lc-btn" onclick="lcSelectAcct('모코야츠',true)">모코야츠만</button>
+    <button class="lc-btn" onclick="lcSelectAcct('우바야츠',true)">우바야츠만</button>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+    <div class="lc-chart-tabs" style="margin-bottom:0;">
+      <button class="lc-chart-tab active" onclick="switchLcTab('daily',this)">일일 매출</button>
+      <button class="lc-chart-tab" onclick="switchLcTab('cumulative',this)">누적 매출</button>
+      <button class="lc-chart-tab" onclick="switchLcTab('profile',this)">감쇠 프로파일</button>
+    </div>
+    <div id="lcDailyTypeWrap" style="display:flex;">
+      <button class="lc-btn" id="lcDailyTypeBtn" onclick="toggleLcDailyType()">막대 그래프</button>
+    </div>
+    <div id="lcProfModeWrap" style="display:none;">
+      <button class="lc-btn" id="lcProfModeBtn" onclick="toggleLcProfMode()">개별 보기</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:16px 20px;">
+      <div class="lc-chart-wrap">
+        <canvas id="lcDailyChart"></canvas>
+        <canvas id="lcCumChart" style="display:none;"></canvas>
+        <canvas id="lcProfChart" style="display:none;"></canvas>
+      </div>
+      <div class="lc-legend-note" id="lcLegendNote"></div>
+    </div>
+  </div>
+  <div class="card" id="lcTableCard" style="display:none;">
+    <div class="card-body" style="padding:16px 20px;">
+      <div style="overflow-x:auto;">
+        <table id="lcTable" class="lc-data-table"></table>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- PAGE: 계정별 -->
-<div class="page" id="page-accounts">
-  <div style="display:flex;align-items:center;justify-content:space-between;">
-    <div class="sec-label" style="margin-bottom:0;">계정별 현황</div>
-    <div class="month-sel-wrap" id="monthBtns2"></div>
+<!-- PAGE: 월간 추이 -->
+<div class="page" id="page-monthly">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <div>
+      <div class="sec-label">월간 매출 추이</div>
+    </div>
+    <div class="month-sel-wrap" id="monthBtns3"></div>
   </div>
-  <div class="platform-section">
-    <div class="platform-header"><span class="platform-badge fanza">fanza</span><div class="platform-divider"></div></div>
-    <div class="account-grid" id="acctsFanza"></div>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-head" style="align-items:flex-start;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div class="card-title" id="mlyAreaTitle"></div>
+        <div class="card-sub" id="mlyAreaSub"></div>
+      </div>
+      <div id="mlyLegend" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-left:auto;"></div>
+    </div>
+    <div style="position:relative;height:380px;">
+      <canvas id="mlyAreaCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+    </div>
   </div>
-  <div class="platform-section">
-    <div class="platform-header"><span class="platform-badge dlsite">dlsite</span><div class="platform-divider"></div></div>
-    <div class="account-grid" id="acctsDlsite"></div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">일별 매출</div></div>
+    <div style="position:relative;height:240px;">
+      <canvas id="mlyBarCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+    </div>
   </div>
 </div>
 
@@ -266,7 +418,7 @@ canvas{max-height:200px;}
     <div class="modal-kpis" id="wm-kpis"></div>
     <div class="modal-charts">
       <div class="modal-chart-wrap"><div class="modal-chart-lbl">월별 순매출 추이</div><canvas id="wm-revChart" style="max-height:150px"></canvas></div>
-      <div class="modal-chart-wrap"><div class="modal-chart-lbl">월별 판매량 추이</div><canvas id="wm-salesChart" style="max-height:150px"></canvas></div>
+      <div class="modal-chart-wrap"><div class="modal-chart-lbl" id="wm-weekLbl">주간 추이</div><canvas id="wm-weekChart" style="max-height:150px"></canvas></div>
     </div>
   </div>
 </div>
@@ -289,7 +441,9 @@ canvas{max-height:200px;}
 <script src="sheets.js"></script>
 <script>
 // 차트 인스턴스
-let revChartInst=null, donutInst=null, wmRevInst=null, wmSalesInst=null, amRevInst=null, amFanInst=null;
+let revChartInst=null, wmRevInst=null, wmWeekInst=null, amRevInst=null, amFanInst=null;
+let mlyAreaInst=null, mlyBarInst=null;
+var revChartType = 'line';
 
 Chart.defaults.color='#52546e'; Chart.defaults.borderColor='#232535';
 Chart.defaults.font.family="'DM Mono',monospace"; Chart.defaults.font.size=11;
@@ -299,22 +453,47 @@ function applyFx() {
   if (!isNaN(v) && v > 0) { FX = v; renderAll(); }
 }
 
-function triggerLoad() {
+// ── 오버뷰 통화 토글 ──
+var OV_CURRENCY = 'KRW';
+var revMode = 'all';
+var TOP_FILTER_PLATFORM = null;
+var TOP_FILTER_ACCT     = null;
+var WT_SORT_COL = 'total_revenue';
+var WT_SORT_DIR = -1;
+var WT_FILTER_PL  = null;
+var WT_FILTER_AID = null;
+function toggleOvCurrency() {
+  OV_CURRENCY = OV_CURRENCY === 'KRW' ? 'JPY' : 'KRW';
+  ['ovCurrBtn','wtCurrBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.textContent = OV_CURRENCY;
+    btn.classList.toggle('active', OV_CURRENCY === 'JPY');
+  });
+  if (RAW.length) { renderOverview(); renderWorksTable(); }
+}
+function ovConvert(yen)  { return OV_CURRENCY === 'KRW' ? krw(yen) : yen; }
+function ovFmtNum(v)     { return OV_CURRENCY === 'KRW' ? fmtKRW(v) : fmtJPYFull(v); }
+function ovFmt(yen)      { return ovFmtNum(ovConvert(yen)); }
+function ovFmtFull(yen)  { return OV_CURRENCY === 'KRW' ? fmtKRWFull(krw(yen)) : fmtJPYFull(yen); }
+
+function triggerLoad(force = false) {
   const btn = document.getElementById('loadBtn');
-  loadSheetData(
-    (count) => {
+  loadSheetData({
+    force,
+    onSuccess: (count, fromCache) => {
       btn.className = 'load-btn ok';
       document.getElementById('loadIcon').textContent = '✓';
-      document.getElementById('loadLabel').textContent = `${count}행 로드됨`;
+      document.getElementById('loadLabel').textContent = count + '행 로드됨' + (fromCache ? ' (캐시)' : '');
       renderAll();
     },
-    (e) => {
+    onError: (e) => {
       btn.className = 'load-btn err';
       document.getElementById('loadIcon').textContent = '✕';
       document.getElementById('loadLabel').textContent = '로드 실패';
-      alert(`데이터 로드 실패: ${e.message}`);
+      alert('데이터 로드 실패: ' + e.message);
     },
-    (isLoading) => {
+    onLoading: (isLoading) => {
       document.getElementById('loadingOverlay').classList.toggle('show', isLoading);
       if (isLoading) {
         btn.className = 'load-btn loading';
@@ -322,7 +501,7 @@ function triggerLoad() {
         document.getElementById('loadLabel').textContent = '불러오는 중...';
       }
     }
-  );
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -332,7 +511,11 @@ function renderAll() {
   if (!RAW.length) return;
   buildMonthBtns();
   renderOverview();
-  renderAccounts();
+  renderWorksTable();
+  LC_INITIALIZED = false;
+  if (document.getElementById('page-lifecycle')?.classList.contains('active')) {
+    renderLifecycle();
+  }
 }
 
 function buildMonthBtns() {
@@ -341,6 +524,7 @@ function buildMonthBtns() {
   ).join('');
   document.getElementById('monthBtns').innerHTML  = html;
   document.getElementById('monthBtns2').innerHTML = html;
+  document.getElementById('monthBtns3').innerHTML = html;
 }
 
 function selectMonth(m, btn) {
@@ -348,7 +532,8 @@ function selectMonth(m, btn) {
   document.querySelectorAll('.month-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll(`.month-btn`).forEach(b => { if(b.textContent===`${m}월`) b.classList.add('active'); });
   renderOverview();
-  renderAccounts();
+  renderWorksTable();
+  if (document.getElementById('page-monthly')?.classList.contains('active')) requestAnimationFrame(renderMonthly);
 }
 
 // ── OVERVIEW ──
@@ -356,201 +541,346 @@ function renderOverview() {
   const m = CUR_MON, prev = prevMon(m);
   const allWids = Object.keys(WORKS_META);
 
-  const lfCur   = totalLF(allWids, m);
-  const lfPrev  = prev ? totalLF(allWids, prev) : 0;
-  const salCur  = totalSales(allWids, m);
-  const salPrev = prev ? totalSales(allWids, prev) : 0;
-  const netCur  = krw(lfCur), netPrev = krw(lfPrev);
-  // 총매출 ≈ 순매출 / commission(0.5) * 2 (샘플에서 commission=0.5 확인)
-  const totCur  = Math.round(netCur / 0.5);
-  const totPrev = Math.round(netPrev / 0.5);
-
+  const grossCur  = totalGross(allWids, m);
+  const grossPrev = prev ? totalGross(allWids, prev) : 0;
+  const netCur    = totalNet(allWids, m);
+  const netPrev   = prev ? totalNet(allWids, prev) : 0;
+  const salCur    = totalSales(allWids, m);
+  const salPrev   = prev ? totalSales(allWids, prev) : 0;
   const kpis = [
-    { lbl:'전체 매출',  val:fmtKRW(totCur),  chg:pct(totCur,totPrev),  note:'', color:'#e8eaf5', icon:'💰' },
-    { lbl:'순 매출',    val:fmtKRW(netCur),  chg:pct(netCur,netPrev),  note:'LF_revenue × 환율', color:'var(--green)', icon:'✅' },
-    { lbl:'총 판매량',  val:salCur.toLocaleString(), chg:pct(salCur,salPrev), note:'', color:'var(--amber)', icon:'📦' },
-    { lbl:'연재 작품',  val:`${allWids.length}개`, chg:null, note:`fanza ${worksOfPlatform('fanza').length} · dlsite ${worksOfPlatform('dlsite').length}`, color:'var(--sky)', icon:'📚' },
+    { lbl:'전체 매출',  val:ovFmtFull(grossCur), sub:'', chg:pct(grossCur,grossPrev), color:'#e8eaf5', icon:'💰' },
+    { lbl:'순 매출',    val:`${ovFmtFull(netCur)} <span style="font-size:14px;font-weight:400;color:var(--muted)">(${ovFmtFull(netCur * 10/11)})</span>`,   sub:'', chg:pct(netCur,netPrev),     color:'var(--green)', icon:'✅' },
+    { lbl:'총 판매량',  val:salCur.toLocaleString(), sub:'', chg:pct(salCur,salPrev), color:'var(--amber)', icon:'📦' },
+    { lbl:'연재 작품',  val:`${allWids.length}개`, sub:`fanza ${worksOfPlatform('fanza').length} · dlsite ${worksOfPlatform('dlsite').length}`, chg:null, color:'var(--sky)', icon:'📚' },
   ];
 
   document.getElementById('kpiGrid').innerHTML = kpis.map(k => {
     const up   = k.chg !== null && k.chg >= 0;
     const chgHtml = k.chg !== null
       ? `<span class="chg ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(k.chg)}%</span><span class="chg-base"> 전월 대비</span>`
-      : `<span class="chg-base">${k.note||''}</span>`;
+      : `<span class="chg-base">${k.sub||''}</span>`;
     return `<div class="kpi">
       <div class="kpi-bar" style="background:linear-gradient(90deg,${k.color},transparent)"></div>
       <div class="kpi-icon">${k.icon}</div>
       <div class="kpi-lbl">${k.lbl}</div>
       <div class="kpi-val">${k.val}</div>
       <div class="kpi-sub">${chgHtml}</div>
-      ${k.note && k.chg!==null ? `<div class="kpi-note">${k.note}</div>` : ''}
+      ${k.sub && k.chg!==null ? `<div class="kpi-note">${k.sub}</div>` : ''}
     </div>`;
   }).join('');
 
-  buildRevChart('all');
-  renderWorkDonut(m);
+  buildRevChart(revMode);
+  renderAcctSummary(m);
+  renderTopFilter();
   renderTopTable(m);
 }
 
 function buildRevChart(mode) {
   if (revChartInst) revChartInst.destroy();
-  const allWids   = Object.keys(WORKS_META);
-  const fanzaWids = worksOfPlatform('fanza');
-  const dlsiteWids= worksOfPlatform('dlsite');
-  let ds = [];
+  const allWids    = Object.keys(WORKS_META);
+  const fanzaWids  = worksOfPlatform('fanza');
+  const dlsiteWids = worksOfPlatform('dlsite');
+  const labels     = MONTHS.map(m => `${m}월`);
+  const tooltip    = { callbacks: { label: c => ` ${c.dataset.label}: ${ovFmtNum(c.raw)}` } };
+  const xScale     = { grid: { color: 'rgba(255,255,255,0.025)' } };
+  const yScale     = { grid: { color: 'rgba(255,255,255,0.025)' }, ticks: { callback: v => ovFmtNum(v) } };
 
-  if (mode === 'all') {
-    ds = [
-      { label:'전체 합산', data:MONTHS.map(m=>krw(totalLF(allWids,m))),    borderColor:'#e8eaf5', backgroundColor:'rgba(232,234,245,0.04)', borderWidth:2.5, fill:true, tension:.4, pointRadius:3 },
-      { label:'fanza',     data:MONTHS.map(m=>krw(totalLF(fanzaWids,m))),  borderColor:'#ff6b9d', backgroundColor:'rgba(255,107,157,0.05)', borderWidth:1.5, fill:true, tension:.4, pointRadius:3, borderDash:[4,3] },
-      { label:'dlsite',    data:MONTHS.map(m=>krw(totalLF(dlsiteWids,m))), borderColor:'#7c6af5', backgroundColor:'rgba(124,106,245,0.05)', borderWidth:1.5, fill:true, tension:.4, pointRadius:3, borderDash:[4,3] },
-    ];
+  if (revChartType === 'line') {
+    let ds;
+    if (mode === 'all') {
+      ds = [
+        { label:'전체 합산', data:MONTHS.map(m=>ovConvert(totalLF(allWids,m))),    borderColor:'#e8eaf5', backgroundColor:'rgba(232,234,245,0.04)', borderWidth:2.5, fill:true, tension:.4, pointRadius:3 },
+        { label:'fanza',     data:MONTHS.map(m=>ovConvert(totalLF(fanzaWids,m))),  borderColor:'#ff6b9d', backgroundColor:'rgba(255,107,157,0.05)', borderWidth:1.5, fill:true, tension:.4, pointRadius:3, borderDash:[4,3] },
+        { label:'dlsite',    data:MONTHS.map(m=>ovConvert(totalLF(dlsiteWids,m))), borderColor:'#7c6af5', backgroundColor:'rgba(124,106,245,0.05)', borderWidth:1.5, fill:true, tension:.4, pointRadius:3, borderDash:[4,3] },
+      ];
+    } else {
+      const plWids  = worksOfPlatform(mode);
+      const plColor = PLATFORM_COLOR[mode];
+      const acctIds = [...new Set(plWids.map(wid=>WORKS_META[wid].account_id))];
+      ds = [
+        { label:`${mode} 합산`, data:MONTHS.map(m=>ovConvert(totalLF(plWids,m))), borderColor:plColor, backgroundColor:'transparent', borderWidth:2.5, fill:false, tension:.4, pointRadius:4, borderDash:[5,3] },
+        ...acctIds.map(aid => ({
+          label: aid, data: MONTHS.map(m=>ovConvert(totalLF(worksOfAcct(aid,mode),m))),
+          borderColor:ACCT_COLOR[aid]||plColor, backgroundColor:(ACCT_COLOR[aid]||plColor)+'14',
+          borderWidth:1.5, fill:true, tension:.4, pointRadius:3,
+        })),
+      ];
+    }
+    revChartInst = new Chart(document.getElementById('revChart'), {
+      type:'line', data:{ labels, datasets:ds },
+      options:{ responsive:true, interaction:{mode:'index',intersect:false},
+        plugins:{ legend:{labels:{boxWidth:10}}, tooltip }, scales:{ x:xScale, y:yScale } }
+    });
+
   } else {
-    const plWids   = worksOfPlatform(mode);
-    const plColor  = PLATFORM_COLOR[mode];
-    const acctIds  = [...new Set(plWids.map(wid=>WORKS_META[wid].account_id))];
-    ds = [
-      { label:`${mode} 합산`, data:MONTHS.map(m=>krw(totalLF(plWids,m))), borderColor:plColor, backgroundColor:'transparent', borderWidth:2.5, fill:false, tension:.4, pointRadius:4, borderDash:[5,3] },
-      ...acctIds.map(aid => ({
-        label: aid,
-        data:  MONTHS.map(m => krw(totalLF(worksOfAcct(aid, mode), m))),
-        borderColor: ACCT_COLOR[aid]||plColor, backgroundColor:(ACCT_COLOR[aid]||plColor)+'14',
-        borderWidth:1.5, fill:true, tension:.4, pointRadius:3,
-      })),
-    ];
+    let ds;
+    if (mode === 'all') {
+      ds = [
+        { label:'fanza',  data:MONTHS.map(m=>ovConvert(totalLF(fanzaWids,m))),  backgroundColor:'rgba(255,107,157,0.65)', borderColor:'#ff6b9d', borderWidth:1, borderRadius:3, stack:'rev' },
+        { label:'dlsite', data:MONTHS.map(m=>ovConvert(totalLF(dlsiteWids,m))), backgroundColor:'rgba(124,106,245,0.65)', borderColor:'#7c6af5', borderWidth:1, borderRadius:3, stack:'rev' },
+      ];
+    } else {
+      const plWids  = worksOfPlatform(mode);
+      const plColor = PLATFORM_COLOR[mode];
+      const acctIds = [...new Set(plWids.map(wid=>WORKS_META[wid].account_id))];
+      ds = acctIds.map(aid => ({
+        label: aid, data: MONTHS.map(m=>ovConvert(totalLF(worksOfAcct(aid,mode),m))),
+        backgroundColor:(ACCT_COLOR[aid]||plColor)+'aa', borderColor:ACCT_COLOR[aid]||plColor,
+        borderWidth:1, borderRadius:3, stack:'rev',
+      }));
+    }
+    revChartInst = new Chart(document.getElementById('revChart'), {
+      type:'bar', data:{ labels, datasets:ds },
+      options:{ responsive:true, interaction:{mode:'index',intersect:false},
+        plugins:{ legend:{labels:{boxWidth:10}}, tooltip },
+        scales:{ x:{ ...xScale, stacked:true }, y:{ ...yScale, stacked:true } } }
+    });
   }
+}
 
-  revChartInst = new Chart(document.getElementById('revChart'), {
-    type:'line', data:{ labels:MONTHS.map(m=>`${m}월`), datasets:ds },
-    options:{ responsive:true, interaction:{mode:'index',intersect:false},
-      plugins:{ legend:{labels:{boxWidth:10}}, tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtKRW(c.raw)}`}} },
-      scales:{ x:{grid:{color:'rgba(255,255,255,0.025)'}}, y:{grid:{color:'rgba(255,255,255,0.025)'},ticks:{callback:v=>fmtKRW(v)}} } }
-  });
+function switchRevType(type, btn) {
+  revChartType = type;
+  document.querySelectorAll('#revTypeTabs .chart-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  buildRevChart(revMode);
 }
 
 function switchRevTab(mode, btn) {
-  document.querySelectorAll('.chart-tab').forEach(t=>t.classList.remove('active'));
+  revMode = mode;
+  document.querySelectorAll('#revModeTabs .chart-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   buildRevChart(mode);
 }
 
-function renderWorkDonut(m) {
-  if (donutInst) donutInst.destroy();
-  const wids   = Object.keys(WORKS_META);
-  const sorted = wids.sort((a,b) => (AGG[m]?.works[b]?.lf||0)-(AGG[m]?.works[a]?.lf||0));
-  const top7   = sorted.slice(0,7);
-  const etc    = sorted.slice(7).reduce((s,wid)=>s+(AGG[m]?.works[wid]?.lf||0),0);
-  const total  = wids.reduce((s,wid)=>s+(AGG[m]?.works[wid]?.lf||0),0);
-  const colors = ['#ff6b9d','#ff9f43','#7c6af5','#38bdf8','#3ecf8e','#f5a623','#f55252','#52546e'];
+function renderAcctSummary(m) {
+  const prev    = prevMon(m);
+  const allAids = [...new Set(Object.values(WORKS_META).map(wm => wm.account_id))];
 
-  const labels = [...top7.map(wid => WORKS_META[wid].nick || WORKS_META[wid].title.slice(0,12)), '기타'];
-  const data   = [...top7.map(wid => Math.round(krw(AGG[m]?.works[wid]?.lf||0))), Math.round(krw(etc))];
+  const rows = allAids
+    .map(aid => {
+      const wids   = worksOfAcct(aid);
+      const gross  = totalLF(wids, m);
+      const grossP = prev ? totalLF(wids, prev) : 0;
+      const fans   = AGG[m]?.accounts[aid] || 0;
+      const pls    = [...new Set(wids.map(wid => WORKS_META[wid].platform))];
+      const mainPl = pls.reduce((best, pl) => totalLF(worksOfAcct(aid, pl), m) > totalLF(worksOfAcct(aid, best), m) ? pl : best, pls[0]);
+      return { aid, gross, grossP, fans, pls, mainPl };
+    })
+    .sort((a, b) => b.gross - a.gross);
 
-  document.getElementById('donutSub').textContent = `${m}월`;
-  donutInst = new Chart(document.getElementById('workDonut'), {
-    type:'doughnut',
-    data:{ labels, datasets:[{ data, backgroundColor:colors, borderWidth:0, hoverOffset:5 }] },
-    options:{ responsive:true, cutout:'58%',
-      plugins:{ legend:{position:'bottom',labels:{boxWidth:9,padding:8,font:{size:10}}},
-        tooltip:{callbacks:{label:c=>`${c.label}: ${fmtKRW(c.raw)} (${total>0?Math.round(c.raw/krw(total)*100):0}%)`}} } }
-  });
+  const maxGross = rows[0]?.gross || 1;
+  document.getElementById('acctSummarySub').textContent = `${m}월`;
+  document.getElementById('acctSummary').innerHTML = `
+    <thead><tr><th>계정</th><th>순매출</th><th>전월비</th><th>팬수</th></tr></thead>
+    <tbody>${rows.map(({ aid, gross, grossP, fans, pls, mainPl }) => {
+      const ac = ACCT_META[aid];
+      const c  = pct(gross, grossP);
+      const up = c >= 0;
+      return `<tr onclick="openAcctModal('${aid}','${mainPl}')">
+        <td style="white-space:nowrap;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:${ac.color};flex-shrink:0;"></div>
+            <div style="font-size:12px;font-weight:500;white-space:nowrap;">${aid}</div>
+            ${pls.map(pl=>`<span class="pl-badge ${pl}">${pl}</span>`).join('')}
+          </div>
+        </td>
+        <td style="white-space:nowrap;"><div class="bar-cell">${ovFmt(gross)}<div class="mini-bar"><div class="mini-fill" style="width:${Math.round(gross/maxGross*100)}%;background:${ac.color}"></div></div></div></td>
+        <td style="white-space:nowrap;"><span class="chg ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(c)}%</span></td>
+        <td style="white-space:nowrap;font-family:'DM Mono',monospace;font-size:12px;">${fans.toLocaleString()}</td>
+      </tr>`;
+    }).join('')}</tbody>`;
+}
+
+function renderTopFilter() {
+  const wrap = document.getElementById('topTableFilterWrap');
+  if (!wrap) return;
+  const accts = Object.keys(ACCT_META);
+  const items = [
+    { label:'전체',   type:'all',      value:'' },
+    { label:'fanza',  type:'platform', value:'fanza' },
+    { label:'dlsite', type:'platform', value:'dlsite' },
+    ...accts.map(aid => ({ label:aid, type:'acct', value:aid })),
+  ];
+  wrap.innerHTML = items.map(b => {
+    const active = (b.type==='all' && !TOP_FILTER_ACCT && !TOP_FILTER_PLATFORM)
+      || (b.type==='platform' && TOP_FILTER_PLATFORM===b.value)
+      || (b.type==='acct'     && TOP_FILTER_ACCT===b.value);
+    const color = b.type==='acct'     ? (ACCT_META[b.value]?.color||'#888')
+                : b.type==='platform' ? `var(--${b.value})` : null;
+    const style = active && color ? `border-color:${color};color:${color};` : '';
+    return `<button class="lc-btn${active?' active':''}" style="${style}" onclick="setTopFilter('${b.type}','${b.value}')">${b.label}</button>`;
+  }).join('');
+}
+function setTopFilter(type, value) {
+  TOP_FILTER_PLATFORM = type==='platform' ? value : null;
+  TOP_FILTER_ACCT     = type==='acct'     ? value : null;
+  renderTopFilter();
+  renderTopTable(CUR_MON);
 }
 
 function renderTopTable(m) {
-  const wids   = Object.keys(WORKS_META);
+  let wids = Object.keys(WORKS_META);
+  if (TOP_FILTER_ACCT)          wids = wids.filter(wid => WORKS_META[wid].account_id === TOP_FILTER_ACCT);
+  else if (TOP_FILTER_PLATFORM) wids = wids.filter(wid => WORKS_META[wid].platform   === TOP_FILTER_PLATFORM);
   const prev   = prevMon(m);
-  const sorted = [...wids].sort((a,b)=>(AGG[m]?.works[b]?.lf||0)-(AGG[m]?.works[a]?.lf||0)).slice(0,10);
-  const maxLF  = AGG[m]?.works[sorted[0]]?.lf || 1;
+  const sorted = [...wids].sort((a,b)=>(AGG[m]?.works[b]?.gross||0)-(AGG[m]?.works[a]?.gross||0)).slice(0,10);
+  const maxLF  = AGG[m]?.works[sorted[0]]?.gross || 1;
 
   document.getElementById('topTableSub').textContent = `${m}월`;
   document.getElementById('topTable').innerHTML = `
-    <thead><tr><th>#</th><th>작품</th><th>플랫폼</th><th>순매출</th><th>판매량</th><th>상태</th></tr></thead>
+    <thead><tr><th>#</th><th>작품</th><th>플랫폼</th><th>업로드일</th><th>월매출</th><th>총매출</th><th>판매량</th><th>★</th><th>상태</th></tr></thead>
     <tbody>${sorted.map((wid,i) => {
       const wm  = WORKS_META[wid];
-      const lf  = AGG[m]?.works[wid]?.lf||0;
-      const lp  = prev ? AGG[prev]?.works[wid]?.lf||0 : 0;
+      const lf  = AGG[m]?.works[wid]?.gross||0;
+      const lp  = prev ? AGG[prev]?.works[wid]?.gross||0 : 0;
       const c   = pct(lf, lp);
       const s   = c>15?'우수':c>0?'성장':'보통';
       const ac  = ACCT_META[wm.account_id];
       const plc = PLATFORM_COLOR[wm.platform];
+      const totalRev = wm.total_revenue || 0;
+      const fav      = wm.favorites != null && wm.favorites !== 0 ? wm.favorites.toLocaleString() : '—';
       return `<tr onclick="openWorkModal('${wid}')">
         <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">${String(i+1).padStart(2,'0')}</td>
         <td>
           <div style="display:flex;align-items:center;gap:7px;">
             <div style="width:22px;height:22px;border-radius:50%;background:${wm.color}22;border:1.5px solid ${wm.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${wm.color};flex-shrink:0;">${(wm.nick||'?').slice(0,1)}</div>
-            <div style="min-width:0;"><div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">${wm.title.slice(0,22)}…</div>
+            <div style="min-width:0;"><div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">${wm.nick_name||wm.nick||wm.title.slice(0,22)}</div>
             <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">${wm.account_id}</div></div>
           </div>
         </td>
         <td><span class="pl-badge ${wm.platform}">${wm.platform}</span></td>
-        <td><div class="bar-cell">${fmtKRW(krw(lf))}<div class="mini-bar"><div class="mini-fill" style="width:${Math.round(lf/maxLF*100)}%;background:${plc}"></div></div></div></td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;">${wm.upload_date || '—'}</td>
+        <td><div class="bar-cell">${ovFmt(lf)}<div class="mini-bar"><div class="mini-fill" style="width:${Math.round(lf/maxLF*100)}%;background:${plc}"></div></div></div></td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;white-space:nowrap;">${ovFmtFull(totalRev)}</td>
         <td style="font-family:'DM Mono',monospace;font-size:12px;">${(AGG[m]?.works[wid]?.sales||0).toLocaleString()}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);">${fav}</td>
         <td><span class="tag ${s==='우수'?'tag-g':s==='성장'?'tag-s':'tag-a'}">${s}</span></td>
       </tr>`;
     }).join('')}</tbody>`;
 }
 
 // ── ACCOUNTS ──
-function renderAccounts() {
-  const m = CUR_MON;
-  ['fanza','dlsite'].forEach(pl => {
-    const acctIds = [...new Set(worksOfPlatform(pl).map(wid=>WORKS_META[wid].account_id))];
-    const el = document.getElementById(`accts${pl.charAt(0).toUpperCase()+pl.slice(1)}`);
-    if (!acctIds.length) { el.innerHTML=`<div class="no-data"><div class="no-data-icon">📭</div><div class="no-data-text">${pl} 계정 없음</div></div>`; return; }
+function calcAge(uploadDate) {
+  if (!uploadDate) return null;
+  const diff = Math.floor((Date.now() - new Date(uploadDate)) / 86400000);
+  return diff >= 0 ? diff : null;
+}
 
-    el.innerHTML = acctIds.map(aid => {
-      const ac   = ACCT_META[aid];
-      const wids = worksOfAcct(aid, pl);
-      const prev = prevMon(m);
-      const lfC  = totalLF(wids, m),   lfP = prev ? totalLF(wids, prev) : 0;
-      const salC = totalSales(wids, m);
-      const fans = AGG[m]?.accounts[aid] || 0;
-      const fanP = prev ? AGG[prev]?.accounts[aid]||0 : 0;
-      const c    = pct(lfC, lfP);
-      return `<div class="acct-card" onclick="openAcctModal('${aid}','${pl}')">
-        <div class="acct-head">
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div class="acct-dot" style="background:${ac.color}"></div>
-              <div class="acct-name">${aid}</div>
-            </div>
-            <span class="acct-concept">${ac.name}</span>
-          </div>
-          <div class="acct-right">
-            <div class="acct-fans-val">${fans.toLocaleString()}</div>
-            <div class="acct-fans-lbl">팬수</div>
-            <div class="acct-fans-chg" style="color:${fans>=fanP?'var(--green)':'var(--red)'};">${fans>=fanP?'▲':'▼'} ${Math.abs(fans-fanP).toLocaleString()}</div>
-          </div>
-        </div>
-        <div class="acct-body">
-          <div class="acct-stats">
-            <span>작품 ${wids.length}개</span>
-            <span>순매출 <span style="color:var(--text);">${fmtKRW(krw(lfC))}</span></span>
-          </div>
-          <div class="work-rows">
-            ${wids.map(wid => {
-              const wm = WORKS_META[wid];
-              const wlf = AGG[m]?.works[wid]?.lf||0;
-              const wlp = prev ? AGG[prev]?.works[wid]?.lf||0 : 0;
-              const wc  = pct(wlf, wlp);
-              return `<div class="work-row" onclick="event.stopPropagation();openWorkModal('${wid}')">
-                <div class="work-nick" style="background:${wm.color}22;border:1.5px solid ${wm.color};color:${wm.color};">${(wm.nick||'?').slice(0,1)}</div>
-                <div class="work-info">
-                  <div class="work-name">${wm.title.slice(0,24)}…</div>
-                  <div class="work-meta">${wm.nick||'—'} · ${wm.platform}</div>
-                </div>
-                <div class="work-right">
-                  <div class="work-rev">${fmtKRW(krw(wlf))}</div>
-                  <div class="work-chg" style="color:${wc>=0?'var(--green)':'var(--red)'};">${wc>=0?'▲':'▼'} ${Math.abs(wc)}%</div>
-                </div>
-              </div>`;
-            }).join('')}
-          </div>
-          <div class="acct-open-hint">클릭하여 계정 상세 보기 →</div>
-        </div>
-      </div>`;
-    }).join('');
+function wtTh(col, label, align='left') {
+  const active = WT_SORT_COL === col;
+  const arrow  = active ? (WT_SORT_DIR === -1 ? ' ↓' : ' ↑') : '';
+  return `<th onclick="sortWorksTable('${col}')" style="cursor:pointer;user-select:none;white-space:nowrap;text-align:${align};${active ? 'color:var(--text);' : ''}">${label}${arrow}</th>`;
+}
+
+function sortWorksTable(col) {
+  if (WT_SORT_COL === col) WT_SORT_DIR *= -1;
+  else { WT_SORT_COL = col; WT_SORT_DIR = -1; }
+  renderWorksTable();
+}
+
+function setWorksFilter(type, value) {
+  WT_FILTER_PL  = type === 'platform' ? value : null;
+  WT_FILTER_AID = type === 'acct'     ? value : null;
+  renderWorksTable();
+}
+
+function resetWorksSort() {
+  WT_SORT_COL = 'total_revenue';
+  WT_SORT_DIR = -1;
+  renderWorksTable();
+}
+
+function renderWorksFilter() {
+  const wrap = document.getElementById('worksFilterWrap');
+  if (!wrap) return;
+  const accts = Object.keys(ACCT_META);
+  const items = [
+    { label:'전체',   type:'all',      value:'' },
+    { label:'fanza',  type:'platform', value:'fanza' },
+    { label:'dlsite', type:'platform', value:'dlsite' },
+    ...accts.map(aid => ({ label:aid, type:'acct', value:aid })),
+  ];
+  const sortIsDefault = WT_SORT_COL === 'total_revenue' && WT_SORT_DIR === -1;
+  wrap.innerHTML = items.map(b => {
+    const active = (b.type==='all' && !WT_FILTER_PL && !WT_FILTER_AID)
+      || (b.type==='platform' && WT_FILTER_PL  === b.value)
+      || (b.type==='acct'     && WT_FILTER_AID === b.value);
+    const color = b.type==='acct'     ? (ACCT_META[b.value]?.color||'#888')
+                : b.type==='platform' ? `var(--${b.value})` : null;
+    const style = active && color ? `border-color:${color};color:${color};` : '';
+    return `<button class="lc-btn${active?' active':''}" style="${style}" onclick="setWorksFilter('${b.type}','${b.value}')">${b.label}</button>`;
+  }).join('') + `<button class="lc-btn" style="${sortIsDefault ? 'opacity:.35;cursor:default;' : ''}" onclick="resetWorksSort()" title="정렬 초기화">↺ 정렬</button>`;
+}
+
+function renderWorksTable() {
+  if (!RAW.length) return;
+  const m = CUR_MON;
+
+  renderWorksFilter();
+
+  let wids = Object.keys(WORKS_META);
+  if (WT_FILTER_PL)  wids = wids.filter(wid => WORKS_META[wid].platform   === WT_FILTER_PL);
+  if (WT_FILTER_AID) wids = wids.filter(wid => WORKS_META[wid].account_id === WT_FILTER_AID);
+
+  wids.sort((a, b) => {
+    const wma = WORKS_META[a], wmb = WORKS_META[b];
+    let va, vb;
+    switch (WT_SORT_COL) {
+      case 'name':          va = wma.nick_name||''; vb = wmb.nick_name||''; return WT_SORT_DIR * va.localeCompare(vb, 'ko');
+      case 'platform':      va = wma.platform||'';  vb = wmb.platform||'';  return WT_SORT_DIR * va.localeCompare(vb);
+      case 'account':       va = wma.account_id||'';vb = wmb.account_id||'';return WT_SORT_DIR * va.localeCompare(vb);
+      case 'upload_date':   va = wma.upload_date||''; vb = wmb.upload_date||''; return WT_SORT_DIR * va.localeCompare(vb);
+      case 'age':           va = calcAge(wma.upload_date)??-1; vb = calcAge(wmb.upload_date)??-1; return WT_SORT_DIR * (va - vb);
+      case 'total_revenue': va = wma.total_revenue||0; vb = wmb.total_revenue||0; return WT_SORT_DIR * (va - vb);
+      case 'favorites':     va = wma.favorites||0;     vb = wmb.favorites||0;     return WT_SORT_DIR * (va - vb);
+      case 'monthly':       va = AGG[m]?.works[a]?.gross||0; vb = AGG[m]?.works[b]?.gross||0; return WT_SORT_DIR * (va - vb);
+      case 'sales':         va = AGG[m]?.works[a]?.sales||0; vb = AGG[m]?.works[b]?.sales||0; return WT_SORT_DIR * (va - vb);
+      default: return 0;
+    }
   });
+
+  document.getElementById('worksTable').innerHTML = `
+    <thead><tr>
+      <th style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);padding:10px 14px;width:32px;">#</th>
+      ${wtTh('name','작품')}
+      ${wtTh('platform','플랫폼')}
+      ${wtTh('account','계정')}
+      ${wtTh('upload_date','업로드일')}
+      ${wtTh('age','경과일','right')}
+      ${wtTh('total_revenue','총매출','right')}
+      ${wtTh('favorites','★','right')}
+      ${wtTh('monthly','이번달매출','right')}
+      ${wtTh('sales','판매량','right')}
+    </tr></thead>
+    <tbody>${wids.map((wid,i) => {
+      const wm      = WORKS_META[wid];
+      const plc     = PLATFORM_COLOR[wm.platform];
+      const age     = calcAge(wm.upload_date);
+      const totalRev = wm.total_revenue || 0;
+      const fav     = wm.favorites != null && wm.favorites !== 0 ? Number(wm.favorites).toLocaleString() : '—';
+      const monthly = AGG[m]?.works[wid]?.gross || 0;
+      const sales   = AGG[m]?.works[wid]?.sales || 0;
+      return `<tr onclick="openWorkModal('${wid}')">
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">${String(i+1).padStart(2,'0')}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:7px;">
+            <div style="width:22px;height:22px;border-radius:50%;background:${wm.color}22;border:1.5px solid ${wm.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${wm.color};flex-shrink:0;">${(wm.nick||'?').slice(0,1)}</div>
+            <div style="min-width:0;">
+              <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">${wm.nick_name||wm.title.slice(0,22)}</div>
+              <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">${wm.nick||'—'}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="pl-badge ${wm.platform}">${wm.platform}</span></td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap;">${wm.account_id}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;">${wm.upload_date||'—'}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;text-align:right;white-space:nowrap;">${age != null ? age+'일' : '—'}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;text-align:right;white-space:nowrap;">${ovFmtFull(totalRev)}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;text-align:right;">${fav}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;text-align:right;white-space:nowrap;">${ovFmt(monthly)}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;text-align:right;">${sales.toLocaleString()}</td>
+      </tr>`;
+    }).join('')}</tbody>`;
 }
 
 // ═══════════════════════════════════════════
@@ -559,35 +889,53 @@ function renderAccounts() {
 function openWorkModal(wid) {
   const wm   = WORKS_META[wid];
   const m    = CUR_MON, prev = prevMon(m);
-  const lf   = AGG[m]?.works[wid]?.lf||0;
-  const lfP  = prev ? AGG[prev]?.works[wid]?.lf||0 : 0;
+  const lf   = AGG[m]?.works[wid]?.gross||0;
+  const lfP  = prev ? AGG[prev]?.works[wid]?.gross||0 : 0;
   const sal  = AGG[m]?.works[wid]?.sales||0;
   const salP = prev ? AGG[prev]?.works[wid]?.sales||0 : 0;
   const c    = pct(lf, lfP);
-  const avgP = sal > 0 ? Math.round(krw(lf)/sal) : 0;
+  const avgP = sal > 0 ? Math.round(ovConvert(lf)/sal) : 0;
   const plc  = PLATFORM_COLOR[wm.platform];
 
-  document.getElementById('wm-title').innerHTML = `<span style="color:${wm.color};margin-right:6px;">●</span>${wm.title.slice(0,30)}…`;
+  document.getElementById('wm-title').innerHTML = `<span style="color:${wm.color};margin-right:6px;">●</span>${wm.nick_name.slice(0,30)}`;
   document.getElementById('wm-sub').innerHTML   = `${wm.nick||'—'} &nbsp;·&nbsp; <span class="pl-badge ${wm.platform}">${wm.platform}</span> &nbsp;·&nbsp; ${wm.account_id}`;
   document.getElementById('wm-kpis').innerHTML  = `
-    <div class="modal-kpi"><div class="modal-kpi-lbl">순매출 (${m}월)</div><div class="modal-kpi-val">${fmtKRW(krw(lf))}</div></div>
+    <div class="modal-kpi"><div class="modal-kpi-lbl">순매출 (${m}월)</div><div class="modal-kpi-val">${ovFmtFull(lf)}</div></div>
     <div class="modal-kpi"><div class="modal-kpi-lbl">전월 대비</div><div class="modal-kpi-val" style="color:${c>=0?'var(--green)':'var(--red)'};">${c>=0?'▲':'▼'} ${Math.abs(c)}%</div></div>
     <div class="modal-kpi"><div class="modal-kpi-lbl">판매량</div><div class="modal-kpi-val">${sal.toLocaleString()}</div></div>
-    <div class="modal-kpi"><div class="modal-kpi-lbl">건당 평균</div><div class="modal-kpi-val">${fmtKRW(avgP)}</div></div>`;
+    <div class="modal-kpi"><div class="modal-kpi-lbl">건당 평균</div><div class="modal-kpi-val">${ovFmtNum(avgP)}</div></div>`;
 
-  if (wmRevInst)   wmRevInst.destroy();
-  if (wmSalesInst) wmSalesInst.destroy();
+  if (wmRevInst)  wmRevInst.destroy();
+  if (wmWeekInst) wmWeekInst.destroy();
 
   wmRevInst = new Chart(document.getElementById('wm-revChart'), {
-    type:'line',
-    data:{ labels:MONTHS.map(m=>`${m}월`), datasets:[{ label:'순매출', data:MONTHS.map(m=>krw(AGG[m]?.works[wid]?.lf||0)), borderColor:plc, backgroundColor:plc+'18', borderWidth:2, fill:true, tension:.4, pointRadius:3 }] },
-    options:{ responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtKRW(c.raw)}`}}}, scales:{x:{grid:{color:'rgba(255,255,255,0.03)'}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{callback:v=>fmtKRW(v)}}} }
+    type:'bar',
+    data:{ labels:MONTHS.map(m=>`${m}월`), datasets:[{ label:'순매출', data:MONTHS.map(m=>ovConvert(AGG[m]?.works[wid]?.gross||0)), backgroundColor:plc+'55', borderColor:plc, borderWidth:1.5, borderRadius:5 }] },
+    options:{ responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${ovFmtNum(c.raw)}`}}}, scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{callback:v=>ovFmtNum(v)}}} }
   });
 
-  wmSalesInst = new Chart(document.getElementById('wm-salesChart'), {
+  // 주간 추이 — RAW_IDX로 해당 작품·월 행만 순회
+  const weeklyRev   = [0, 0, 0, 0, 0];
+  const weeklySales = [0, 0, 0, 0, 0];
+  for (const r of (RAW_IDX[wid]?.[String(m)] || [])) {
+    const parts = String(r.crawl_Date_2 || '').trim().split(/\.\s*/).filter(p => p.trim());
+    if (parts.length < 3) continue;
+    const day = parseInt(parts[2]);
+    if (isNaN(day) || day < 1) continue;
+    const week = Math.min(Math.floor((day - 1) / 7), 4);
+    weeklyRev[week]   += parseNum(r.revenue_DoD);
+    weeklySales[week] += parseNum(r.sales_count_DoD);
+  }
+  const weekLabels = ['1주차','2주차','3주차','4주차','5주차'];
+  const lastWeek   = weeklyRev.reduce((last, v, i) => v > 0 ? i : last, 0);
+  const wLabels    = weekLabels.slice(0, lastWeek + 1);
+  const wRevData   = weeklyRev.slice(0, lastWeek + 1).map(v => ovConvert(v));
+
+  document.getElementById('wm-weekLbl').textContent = `${m}월 주간 순매출`;
+  wmWeekInst = new Chart(document.getElementById('wm-weekChart'), {
     type:'bar',
-    data:{ labels:MONTHS.map(m=>`${m}월`), datasets:[{ label:'판매량', data:MONTHS.map(m=>AGG[m]?.works[wid]?.sales||0), backgroundColor:plc+'44', borderColor:plc, borderWidth:1.5, borderRadius:5 }] },
-    options:{ responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toLocaleString()}건`}}}, scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{callback:v=>v.toLocaleString()}}} }
+    data:{ labels:wLabels, datasets:[{ label:'순매출', data:wRevData, backgroundColor:plc+'55', borderColor:plc, borderWidth:1.5, borderRadius:5 }] },
+    options:{ responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${ovFmtNum(c.raw)}`}}}, scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{callback:v=>ovFmtNum(v)}}} }
   });
 
   document.getElementById('workModal').classList.add('open');
@@ -630,8 +978,8 @@ function openAcctModal(aid, pl) {
 
   document.getElementById('am-works').innerHTML = wids.map(wid => {
     const wm  = WORKS_META[wid];
-    const wlf = AGG[m]?.works[wid]?.lf||0;
-    const wlp = prev ? AGG[prev]?.works[wid]?.lf||0 : 0;
+    const wlf = AGG[m]?.works[wid]?.gross||0;
+    const wlp = prev ? AGG[prev]?.works[wid]?.gross||0 : 0;
     const wc  = pct(wlf, wlp);
     return `<div class="acct-modal-work-row" onclick="closeById('acctModal');openWorkModal('${wid}')">
       <div style="width:28px;height:28px;border-radius:50%;background:${wm.color}22;border:1.5px solid ${wm.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${wm.color};flex-shrink:0;">${(wm.nick||'?').slice(0,1)}</div>
@@ -657,6 +1005,804 @@ document.addEventListener('keydown', e => {
 });
 
 // ═══════════════════════════════════════════
+//  LIFECYCLE PAGE
+// ═══════════════════════════════════════════
+let lcDailyInst = null, lcCumInst = null, lcProfInst = null;
+let LC_SELECTED    = new Set();
+let LC_INITIALIZED = false;
+let LC_INCLUDE_EST = true;
+let LC_MA_WINDOW   = 0;
+let LC_AGE_MIN     = 0;
+let LC_AGE_MAX     = 180;
+let LC_CURRENCY    = 'KRW';
+let LC_TAB         = 'daily';
+let LC_CHART_THEME = 'dark';
+let LC_DAILY_TYPE  = 'line'; // 'line' | 'bar'
+let LC_PROFILE_MODE = 'avg'; // 'avg' | 'individual'
+
+const LC_PALETTE     = ['#ff6b9d','#ff9f43','#7c6af5','#38bdf8','#3ecf8e','#f5a623','#f55252','#e879f9','#34d399','#fb923c'];
+const LC_COLOR_ASSIGN = {}; // wid → color (선택된 작품만 보유)
+
+function lcColor(wid) {
+  return LC_COLOR_ASSIGN[wid] || 'var(--muted)';
+}
+function lcAssignColor(wid) {
+  if (LC_COLOR_ASSIGN[wid]) return;
+  const used = new Set(Object.values(LC_COLOR_ASSIGN));
+  const col  = LC_PALETTE.find(c => !used.has(c)) || LC_PALETTE[Object.keys(LC_COLOR_ASSIGN).length % LC_PALETTE.length];
+  LC_COLOR_ASSIGN[wid] = col;
+}
+function lcReleaseColor(wid) {
+  delete LC_COLOR_ASSIGN[wid];
+}
+
+function lcTheme() {
+  if (LC_CHART_THEME === 'light') {
+    return { bg:'#ffffff', gridColor:'rgba(0,0,0,0.07)', textColor:'#333', mutedColor:'#888' };
+  }
+  return { bg:'#0f1018', gridColor:'rgba(255,255,255,0.025)', textColor:'#e8eaf5', mutedColor:'#52546e' };
+}
+
+const LC_BG_PLUGIN = {
+  id: 'lcBg',
+  beforeDraw(chart) {
+    const { ctx, width, height } = chart;
+    ctx.save();
+    ctx.fillStyle = lcTheme().bg;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
+};
+
+function renderLifecycle() {
+  if (!LIFECYCLE_WIDS.length) return;
+  if (!LC_INITIALIZED) {
+    LC_SELECTED = new Set();
+    LC_AGE_MAX  = LIFECYCLE_WIDS.reduce((mx, wid) => {
+      const s = WORK_SERIES[wid];
+      return Math.max(mx, s[s.length - 1]?.age || 0);
+    }, 0);
+    document.getElementById('lcAgeMax').value = LC_AGE_MAX;
+    LC_INITIALIZED = true;
+  }
+  buildLcWorkList();
+  drawLcChart();
+}
+
+function buildLcWorkList() {
+  const el = document.getElementById('lcWorkList');
+
+  // 플랫폼별 → 계정별로 그룹핑
+  const platforms = ['fanza', 'dlsite'];
+  const byPlatform = {};
+  for (const pl of platforms) byPlatform[pl] = {};
+
+  for (const wid of LIFECYCLE_WIDS) {
+    const wm  = WORKS_META[wid];
+    const pl  = wm.platform;
+    const aid = wm.account_id;
+    if (!byPlatform[pl]) byPlatform[pl] = {};
+    if (!byPlatform[pl][aid]) byPlatform[pl][aid] = [];
+    byPlatform[pl][aid].push(wid);
+  }
+
+  const acctOrder = ['모코야츠', '우바야츠'];
+
+  el.innerHTML = platforms.filter(pl => Object.keys(byPlatform[pl]).length).map(pl => {
+    const groups  = byPlatform[pl];
+    const aids    = [...new Set([...acctOrder, ...Object.keys(groups)])].filter(a => groups[a]);
+    const acctBlocks = aids.map(aid => {
+      const acct = ACCT_META[aid] || { name: aid, color: '#52546e' };
+      const chips = groups[aid].map(wid => {
+        const wm  = WORKS_META[wid];
+        const sel = LC_SELECTED.has(wid);
+        const col = sel ? LC_COLOR_ASSIGN[wid] : 'var(--muted)';
+        return '<div class="lc-work-chip ' + (sel ? 'active' : '') + '"'
+          + ' style="border-color:' + col + ';color:' + col + ';background:' + (sel ? LC_COLOR_ASSIGN[wid] + '22' : 'transparent') + ';"'
+          + ' onclick="toggleLcWork(\'' + wid + '\')">'
+          + (wm.nick_name || wm.nick || wm.title.slice(0, 10))
+          + '</div>';
+      }).join('');
+      return '<div class="lc-acct-group">'
+        + '<div class="lc-acct-label" style="color:' + acct.color + ';">' + aid + '</div>'
+        + '<div class="lc-acct-chips">' + chips + '</div>'
+        + '</div>';
+    }).join('');
+    return '<div class="lc-platform-section">'
+      + '<div class="platform-header"><span class="platform-badge ' + pl + '">' + pl + '</span><div class="platform-divider"></div></div>'
+      + acctBlocks
+      + '</div>';
+  }).join('');
+}
+
+function toggleLcWork(wid) {
+  if (LC_SELECTED.has(wid)) {
+    LC_SELECTED.delete(wid);
+    lcReleaseColor(wid);
+  } else {
+    LC_SELECTED.add(wid);
+    lcAssignColor(wid);
+  }
+  buildLcWorkList();
+  drawLcChart();
+}
+
+function lcSelectAll(val) {
+  if (!val) {
+    LC_SELECTED = new Set();
+    for (const wid in LC_COLOR_ASSIGN) lcReleaseColor(wid);
+  } else {
+    for (const wid of LIFECYCLE_WIDS) {
+      if (!LC_SELECTED.has(wid)) { LC_SELECTED.add(wid); lcAssignColor(wid); }
+    }
+  }
+  buildLcWorkList();
+  drawLcChart();
+}
+
+function lcSelectAcct(aid, exclusive) {
+  if (exclusive) {
+    LC_SELECTED = new Set();
+    for (const wid in LC_COLOR_ASSIGN) lcReleaseColor(wid);
+  }
+  for (const wid of LIFECYCLE_WIDS) {
+    if (WORKS_META[wid].account_id === aid && !LC_SELECTED.has(wid)) {
+      LC_SELECTED.add(wid);
+      lcAssignColor(wid);
+    }
+  }
+  buildLcWorkList();
+  drawLcChart();
+}
+
+function lcSelectPlatform(pl, exclusive) {
+  if (exclusive) {
+    LC_SELECTED = new Set();
+    for (const wid in LC_COLOR_ASSIGN) lcReleaseColor(wid);
+  }
+  for (const wid of LIFECYCLE_WIDS) {
+    if (WORKS_META[wid].platform === pl && !LC_SELECTED.has(wid)) {
+      LC_SELECTED.add(wid);
+      lcAssignColor(wid);
+    }
+  }
+  buildLcWorkList();
+  drawLcChart();
+}
+
+function applyLcRange() {
+  const mn = parseInt(document.getElementById('lcAgeMin').value);
+  const mx = parseInt(document.getElementById('lcAgeMax').value);
+  if (!isNaN(mn)) LC_AGE_MIN = mn;
+  if (!isNaN(mx)) LC_AGE_MAX = mx;
+  drawLcChart();
+}
+
+function resetLcRange() {
+  LC_AGE_MIN = 0;
+  LC_AGE_MAX = LIFECYCLE_WIDS.reduce((mx, wid) => {
+    const s = WORK_SERIES[wid];
+    return Math.max(mx, s[s.length - 1]?.age || 0);
+  }, 0);
+  document.getElementById('lcAgeMin').value = LC_AGE_MIN;
+  document.getElementById('lcAgeMax').value = LC_AGE_MAX;
+  drawLcChart();
+}
+
+function toggleLcEst() {
+  LC_INCLUDE_EST = !LC_INCLUDE_EST;
+  document.getElementById('lcEstBtn').textContent = LC_INCLUDE_EST ? '추정치 숨기기' : '추정치 보이기';
+  drawLcChart();
+}
+
+function toggleLcMa() {
+  LC_MA_WINDOW = LC_MA_WINDOW ? 0 : 7;
+  document.getElementById('lcMaBtn').classList.toggle('active', LC_MA_WINDOW > 0);
+  drawLcChart();
+}
+
+function toggleLcCurrency() {
+  LC_CURRENCY = LC_CURRENCY === 'KRW' ? 'JPY' : 'KRW';
+  document.getElementById('lcCurrBtn').textContent = LC_CURRENCY;
+  drawLcChart();
+}
+
+function toggleLcTheme() {
+  LC_CHART_THEME = LC_CHART_THEME === 'dark' ? 'light' : 'dark';
+  const btn = document.getElementById('lcThemeBtn');
+  btn.textContent = LC_CHART_THEME === 'dark' ? '☀ 라이트' : '🌙 다크';
+  btn.classList.toggle('active', LC_CHART_THEME === 'light');
+  drawLcChart();
+}
+
+function toggleLcDailyType() {
+  LC_DAILY_TYPE = LC_DAILY_TYPE === 'line' ? 'bar' : 'line';
+  const btn = document.getElementById('lcDailyTypeBtn');
+  btn.classList.toggle('active', LC_DAILY_TYPE === 'bar');
+  btn.textContent = LC_DAILY_TYPE === 'bar' ? '선 그래프' : '막대 그래프';
+  if (LC_TAB === 'daily') drawLcDaily();
+}
+
+function switchLcTab(tab, btn) {
+  LC_TAB = tab;
+  document.querySelectorAll('.lc-chart-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const tabMap = { daily:'lcDailyChart', cumulative:'lcCumChart', profile:'lcProfChart' };
+  Object.entries(tabMap).forEach(([k, id]) => {
+    document.getElementById(id).style.display = k === tab ? '' : 'none';
+  });
+  document.getElementById('lcDailyTypeWrap').style.display = tab === 'daily' ? 'flex' : 'none';
+  document.getElementById('lcProfModeWrap').style.display = tab === 'profile' ? 'flex' : 'none';
+  drawLcChart();
+}
+
+function toggleLcProfMode() {
+  LC_PROFILE_MODE = LC_PROFILE_MODE === 'avg' ? 'individual' : 'avg';
+  const btn = document.getElementById('lcProfModeBtn');
+  btn.classList.toggle('active', LC_PROFILE_MODE === 'individual');
+  btn.textContent = LC_PROFILE_MODE === 'individual' ? '평균 보기' : '개별 보기';
+  drawLcProfile();
+}
+
+function lcConvert(yen)     { return LC_CURRENCY === 'KRW' ? krw(yen) : yen; }
+function lcFmt(v)           { return LC_CURRENCY === 'KRW' ? fmtKRW(v) : fmtJPY(v); }
+function lcFmtFull(v)       { return LC_CURRENCY === 'KRW' ? fmtKRWFull(v) : fmtJPYFull(v); }
+
+function buildSplitDatasets(wid, series) {
+  const col = lcColor(wid);
+  const wm  = WORKS_META[wid];
+  const nm  = wm.nick_name || wm.nick || wm.title.slice(0, 10);
+  const filtered = series.filter(p => p.age >= LC_AGE_MIN && p.age <= LC_AGE_MAX);
+
+  const segments = [];
+  let cur = null;
+  for (const p of filtered) {
+    const isEst = !!p.estimated;
+    if (!cur || cur.estimated !== isEst) {
+      if (cur) segments.push(cur);
+      cur = { estimated: isEst, points: [] };
+    }
+    cur.points.push(p);
+  }
+  if (cur) segments.push(cur);
+
+  const datasets = [];
+  segments.forEach((seg, si) => {
+    if (seg.estimated && !LC_INCLUDE_EST) return;
+    const needsLabel = si === 0 || (si === 1 && segments[0].estimated && !LC_INCLUDE_EST);
+    datasets.push({
+      label:           needsLabel ? nm : '_' + nm + si,
+      data:            seg.points.map(p => ({ x: p.age, y: lcConvert(p.rev) })),
+      borderColor:     col,
+      backgroundColor: col + '18',
+      borderWidth:     seg.estimated ? 1.5 : 2,
+      borderDash:      seg.estimated ? [4, 3] : [],
+      fill:            false,
+      tension:         0.4,
+      pointRadius:     0,
+      pointHoverRadius:4,
+    });
+  });
+  return datasets;
+}
+
+function drawLcChart() {
+  if (LC_TAB === 'daily')           drawLcDaily();
+  else if (LC_TAB === 'cumulative') drawLcCumulative();
+  else                               drawLcProfile();
+  drawLcTable();
+}
+
+function drawLcDaily() {
+  if (lcDailyInst) { lcDailyInst.destroy(); lcDailyInst = null; }
+  if (LC_DAILY_TYPE === 'bar') { drawLcDailyBar(); return; }
+
+  const th = lcTheme();
+  let datasets = [];
+  for (const wid of LC_SELECTED) {
+    let series = [...WORK_SERIES[wid]];
+    if (LC_MA_WINDOW) series = movingAverage(series, LC_MA_WINDOW);
+    datasets = datasets.concat(buildSplitDatasets(wid, series));
+  }
+  lcDailyInst = new Chart(document.getElementById('lcDailyChart'), {
+    type: 'line',
+    plugins: [LC_BG_PLUGIN],
+    data: { datasets },
+    options: {
+      responsive: true,
+      parsing: false,
+      interaction: { mode: 'x', intersect: false },
+      plugins: {
+        legend: { labels: { color: th.textColor, boxWidth: 10, filter: item => !item.text.startsWith('_') } },
+        tooltip: { itemsLimit: 6, callbacks: { label: c => { const lbl = c.dataset.label.startsWith('_') ? c.dataset.label.replace(/^_/, '').replace(/\d+$/, '') : c.dataset.label; return ' ' + lbl + ': ' + lcFmtFull(Math.round(c.raw.y)); } } },
+        lcBg: {}
+      },
+      scales: {
+        x: { type:'linear', title:{ display:true, text:'age (일)', color:th.mutedColor }, grid:{ color:th.gridColor }, ticks:{ color:th.textColor } },
+        y: { grid:{ color:th.gridColor }, ticks:{ color:th.textColor, callback: v => lcFmt(v) } }
+      }
+    }
+  });
+  document.getElementById('lcLegendNote').textContent = LC_INCLUDE_EST ? '점선 = 역산 추정치 (참조 프로파일 기반)' : '';
+}
+
+function drawLcDailyBar() {
+  const th = lcTheme();
+
+  // 선택된 작품의 series를 수집하고 전체 age 목록 구축
+  const workSeries = {};
+  const allAges = new Set();
+  for (const wid of LC_SELECTED) {
+    let series = [...WORK_SERIES[wid]];
+    if (LC_MA_WINDOW) series = movingAverage(series, LC_MA_WINDOW);
+    const filtered = series.filter(p => p.age >= LC_AGE_MIN && p.age <= LC_AGE_MAX);
+    workSeries[wid] = filtered;
+    filtered.forEach(p => allAges.add(p.age));
+  }
+  const ages = [...allAges].sort((a, b) => a - b);
+
+  const datasets = [];
+  for (const wid of LC_SELECTED) {
+    const col   = lcColor(wid);
+    const wm    = WORKS_META[wid];
+    const nm    = wm.nick_name || wm.nick || wm.title.slice(0, 10);
+    const ageMap = new Map(workSeries[wid].map(p => [p.age, p]));
+
+    datasets.push({
+      label: nm,
+      data: ages.map(a => {
+        const p = ageMap.get(a);
+        if (!p) return null;
+        if (p.estimated && !LC_INCLUDE_EST) return null;
+        return lcConvert(p.rev);
+      }),
+      backgroundColor: ages.map(a => {
+        const p = ageMap.get(a);
+        if (!p) return 'transparent';
+        return p.estimated ? col + '55' : col + 'bb';
+      }),
+      borderColor: ages.map(a => {
+        const p = ageMap.get(a);
+        if (!p) return 'transparent';
+        return p.estimated ? col + '88' : col;
+      }),
+      borderWidth: 1,
+      borderRadius: 2,
+    });
+  }
+
+  lcDailyInst = new Chart(document.getElementById('lcDailyChart'), {
+    type: 'bar',
+    plugins: [LC_BG_PLUGIN],
+    data: { labels: ages, datasets },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: th.textColor, boxWidth: 10 } },
+        tooltip: { itemsLimit: 6, callbacks: { label: c => c.raw !== null ? ' ' + c.dataset.label + ': ' + lcFmtFull(Math.round(c.raw)) : null } },
+        lcBg: {}
+      },
+      scales: {
+        x: { title: { display: true, text: 'age (일)', color: th.mutedColor }, grid: { color: th.gridColor }, ticks: { color: th.textColor, maxTicksLimit: 30 } },
+        y: { grid: { color: th.gridColor }, ticks: { color: th.textColor, callback: v => lcFmt(v) } }
+      }
+    }
+  });
+  document.getElementById('lcLegendNote').textContent = LC_INCLUDE_EST ? '연한 막대 = 역산 추정치 (참조 프로파일 기반)' : '';
+}
+
+function drawLcCumulative() {
+  if (lcCumInst) { lcCumInst.destroy(); lcCumInst = null; }
+  const th = lcTheme();
+  let datasets = [];
+  for (const wid of LC_SELECTED) {
+    datasets = datasets.concat(buildSplitDatasets(wid, cumulativeSeries(WORK_SERIES[wid])));
+  }
+  lcCumInst = new Chart(document.getElementById('lcCumChart'), {
+    type: 'line',
+    plugins: [LC_BG_PLUGIN],
+    data: { datasets },
+    options: {
+      responsive: true,
+      parsing: false,
+      interaction: { mode: 'x', intersect: false },
+      plugins: {
+        legend: { labels: { color: th.textColor, boxWidth: 10, filter: item => !item.text.startsWith('_') } },
+        tooltip: { itemsLimit: 6, callbacks: { label: c => { const lbl = c.dataset.label.startsWith('_') ? c.dataset.label.replace(/^_/, '').replace(/\d+$/, '') : c.dataset.label; return ' ' + lbl + ': ' + lcFmtFull(Math.round(c.raw.y)); } } },
+        lcBg: {}
+      },
+      scales: {
+        x: { type:'linear', title:{ display:true, text:'age (일)', color:th.mutedColor }, grid:{ color:th.gridColor }, ticks:{ color:th.textColor } },
+        y: { grid:{ color:th.gridColor }, ticks:{ color:th.textColor, callback: v => lcFmt(v) } }
+      }
+    }
+  });
+  document.getElementById('lcLegendNote').textContent = '';
+}
+
+function buildWorkProfile(wid) {
+  const series = WORK_SERIES[wid];
+  if (!series || series[0]?.age !== 0) return null;
+  const base = series[0].rev;
+  if (base === 0) return null;
+  return series
+    .filter(p => p.age >= LC_AGE_MIN && p.age <= LC_AGE_MAX)
+    .map(p => ({ x: p.age, y: p.rev / base * 100 }));
+}
+
+function drawLcProfile() {
+  if (lcProfInst) { lcProfInst.destroy(); lcProfInst = null; }
+  const th = lcTheme();
+  let datasets = [];
+  let note = '';
+
+  if (LC_PROFILE_MODE === 'individual' && LC_SELECTED.size) {
+    for (const wid of LC_SELECTED) {
+      const pts = buildWorkProfile(wid);
+      if (!pts) continue;
+      const wm  = WORKS_META[wid];
+      const nm  = wm.nick_name || wm.nick || wm.title.slice(0, 10);
+      const col = lcColor(wid);
+      datasets.push({ label: nm, data: pts, borderColor: col, backgroundColor: 'transparent', borderWidth: 1.5, tension: 0.4, pointRadius: 0 });
+    }
+    note = '선택 작품별 매출 비중 (관측 기간 총매출 대비)';
+  } else {
+    // 선택 작품이 있으면 그 작품들만으로 평균, 없으면 전체 AGE_PROFILE
+    if (LC_SELECTED.size) {
+      const validWids = [...LC_SELECTED].filter(wid => WORK_SERIES[wid][0]?.age === 0);
+      if (validWids.length) {
+        const maxAge = validWids.reduce((mx, wid) => Math.max(mx, WORK_SERIES[wid][WORK_SERIES[wid].length - 1]?.age || 0), 0);
+        // age Map 사전 구성 — 내부 find() O(S) → get() O(1)
+        const vMaps = {};
+        for (const wid of validWids) vMaps[wid] = new Map(WORK_SERIES[wid].map(p => [p.age, p]));
+        const avgData = [];
+        for (let a = LC_AGE_MIN; a <= Math.min(maxAge, LC_AGE_MAX); a++) {
+          const fracs = [];
+          for (const wid of validWids) {
+            const series  = WORK_SERIES[wid];
+            const lastAge = series[series.length - 1].age;
+            if (lastAge < a) continue;
+            const pt = vMaps[wid].get(a);
+            if (!pt) continue;
+            const base = series[0].rev;
+            if (base > 0) fracs.push(pt.rev / base * 100);
+          }
+          if (fracs.length) avgData.push({ x: a, y: fracs.reduce((s, v) => s + v, 0) / fracs.length });
+        }
+        datasets.push({ label: '선택 작품 평균 매출 비중 (%)', data: avgData, borderColor: '#38bdf8', backgroundColor: '#38bdf822', borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0 });
+        note = `선택 ${validWids.length}개 작품 기준 평균 (age 0부터 관측된 작품만)`;
+      }
+    }
+    if (!datasets.length) {
+      const data = AGE_PROFILE.map((p, a) => ({ x: a, y: p ? p.avgFrac * 100 : 0 })).filter(p => p.x >= LC_AGE_MIN && p.x <= LC_AGE_MAX);
+      datasets.push({ label: '전체 평균 매출 비중 (%)', data, borderColor: '#38bdf8', backgroundColor: '#38bdf822', borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0 });
+      note = '전체 참조 작품 평균 (n >= 3인 age)';
+    }
+  }
+
+  lcProfInst = new Chart(document.getElementById('lcProfChart'), {
+    type: 'line',
+    plugins: [LC_BG_PLUGIN],
+    data: { datasets },
+    options: {
+      responsive: true,
+      parsing: false,
+      plugins: {
+        legend: { labels: { color: th.textColor, boxWidth: 10 } },
+        tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + c.raw.y.toFixed(3) + '%' } },
+        lcBg: {}
+      },
+      scales: {
+        x: { type:'linear', title:{ display:true, text:'age (일)', color:th.mutedColor }, grid:{ color:th.gridColor }, ticks:{ color:th.textColor } },
+        y: { grid:{ color:th.gridColor }, ticks:{ color:th.textColor, callback: v => v.toFixed(2) + '%' } }
+      }
+    }
+  });
+  document.getElementById('lcLegendNote').textContent = note;
+}
+
+function drawLcTable() {
+  const card  = document.getElementById('lcTableCard');
+  const table = document.getElementById('lcTable');
+
+  if (!LC_SELECTED.size || LC_TAB === 'profile') {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+
+  // 작품별 series 수집
+  const works = [...LC_SELECTED];
+  const seriesMap = {};
+  const allAges   = new Set();
+  for (const wid of works) {
+    let s = [...WORK_SERIES[wid]];
+    if (LC_MA_WINDOW) s = movingAverage(s, LC_MA_WINDOW);
+    if (LC_TAB === 'cumulative') s = cumulativeSeries(s);
+    const filtered = s.filter(p => p.age >= LC_AGE_MIN && p.age <= LC_AGE_MAX && (LC_INCLUDE_EST || !p.estimated));
+    seriesMap[wid] = new Map(filtered.map(p => [p.age, p]));
+    filtered.forEach(p => allAges.add(p.age));
+  }
+  const ages = [...allAges].sort((a, b) => a - b);
+
+  // 헤더 행
+  const headerCells = ages.map(a => `<th>${a}</th>`).join('');
+  const header = `<thead><tr><th class="lc-th-work">작품 \\ age</th>${headerCells}</tr></thead>`;
+
+  // 데이터 행 (작품 = 행)
+  const rows = works.map(wid => {
+    const wm  = WORKS_META[wid];
+    const nm  = wm.nick_name || wm.nick || wm.title.slice(0, 10);
+    const col = lcColor(wid);
+    const cells = ages.map(a => {
+      const p = seriesMap[wid].get(a);
+      if (!p) return '<td>—</td>';
+      const val = lcFmtFull(Math.round(lcConvert(p.rev)));
+      return `<td class="${p.estimated ? 'lc-td-est' : ''}">${val}</td>`;
+    }).join('');
+    return `<tr><td class="lc-td-work" style="color:${col};border-left:3px solid ${col};padding-left:8px;">${nm}</td>${cells}</tr>`;
+  }).join('');
+
+  table.innerHTML = header + `<tbody>${rows}</tbody>`;
+}
+
+// ═══════════════════════════════════════════
+//  MONTHLY TREND
+// ═══════════════════════════════════════════
+// 이벤트 수직선 플러그인 (전역 등록)
+const mlyEventPlugin = {
+  id: 'mlyEventLines',
+  afterDatasetsDraw(chart) {
+    const events = chart.options.plugins?.mlyEventLines?.events;
+    if (!events?.length) return;
+    const { ctx, chartArea: { top, bottom, left, right }, scales: { x } } = chart;
+    events.forEach(ev => {
+      if (ev.xi < 0) return;
+      const px = x.getPixelForValue(ev.xi);
+      // 수직 점선
+      ctx.save();
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = ev.color;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath(); ctx.moveTo(px, top); ctx.lineTo(px, bottom); ctx.stroke();
+      ctx.restore();
+      // 라벨 박스
+      if (!ev.label) return;
+      ctx.save();
+      ctx.font = '500 9px "DM Mono", monospace';
+      const lines = [ev.label, `(${ev.date})`];
+      const tw = Math.max(...lines.map(l => ctx.measureText(l).width));
+      const bw = tw + 10, bh = 30;
+      let bx = Math.max(left, Math.min(right - bw, px - bw / 2));
+      const by = top + 6;
+      ctx.fillStyle = 'rgba(12,14,26,0.93)';
+      ctx.strokeStyle = ev.color;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 3); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = ev.color;
+      lines.forEach((line, i) => ctx.fillText(line, bx + 5, by + 11 + i * 13));
+      ctx.restore();
+    });
+  },
+};
+Chart.register(mlyEventPlugin);
+
+function getMonthEvents(year, mo, dates) {
+  const events = [];
+  for (const [, wm] of Object.entries(WORKS_META)) {
+    if (!wm.upload_date) continue;
+    const [uy, umo, ud] = wm.upload_date.split('-').map(Number);
+    if (uy !== year || umo !== mo) continue;
+    const xi = dates.indexOf(wm.upload_date);
+    if (xi < 0) continue;
+    events.push({ xi, label: wm.nick_name || wm.nick || '', date: `${mo}/${ud}`, color: '#7c6af5' });
+  }
+  return events;
+}
+
+function buildMlyAreaChart(daily, sortedAids, events) {
+  if (mlyAreaInst) { mlyAreaInst.destroy(); mlyAreaInst = null; }
+  const { dates, byAcct, total } = daily;
+  const labels = dates.map(d => { const [,mo,dd]=d.split('-'); return `${+mo}/${+dd}`; });
+
+  // 계정별 누적
+  const cumByAcct = {};
+  sortedAids.forEach(aid => { let a=0; cumByAcct[aid]=byAcct[aid].map(v=>(a+=v)); });
+
+  // 수동 스택: si번째 데이터 = 0..si 계정 누적 합
+  const stackedData = sortedAids.map((aid, si) =>
+    dates.map((_, di) => sortedAids.slice(0, si+1).reduce((s,a)=>s+(cumByAcct[a][di]||0),0))
+  );
+  let aT=0; const cumTotal=total.map(v=>(aT+=v));
+  const areaYMax = Math.max(...cumTotal) * 1.06;
+
+  const datasets = [
+    ...sortedAids.map((aid, si) => ({
+      label: aid,
+      data: stackedData[si],
+      backgroundColor: (ACCT_META[aid]?.color||'#888')+'44',
+      borderColor:     (ACCT_META[aid]?.color||'#888'),
+      borderWidth: 0,
+      fill: si===0 ? 'origin' : '-1',
+      tension: 0.2, pointRadius: 0,
+      order: sortedAids.length - si + 1,
+    })),
+    { label:'전체', data:cumTotal, backgroundColor:'transparent',
+      borderColor:'rgba(255,255,255,0.88)', borderWidth:2,
+      fill:false, tension:0.2, pointRadius:0, order:0 },
+  ];
+
+  // 인-차트 계정 이름 + 오른쪽 최종값 레이블 플러그인
+  const areaLabelsPlugin = {
+    id: 'mlyAreaLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx, chartArea:{ left, right, bottom }, scales:{ y } } = chart;
+      sortedAids.forEach((aid, si) => {
+        const meta = chart.getDatasetMeta(si);
+        const n    = meta.data.length;
+        if (!n) return;
+        const color = ACCT_META[aid]?.color || '#888';
+
+        // 인-차트 이름 (중앙 부근)
+        const midI  = Math.floor(n * 0.55);
+        const topPx = meta.data[midI]?.y ?? bottom;
+        const botPx = si === 0 ? bottom : (chart.getDatasetMeta(si-1).data[midI]?.y ?? bottom);
+        const midY  = (topPx + botPx) / 2;
+        const midX  = meta.data[midI]?.x ?? (left + (right-left)/2);
+        ctx.save();
+        ctx.font = '600 12px "Noto Sans KR",sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(aid, midX, midY);
+        ctx.restore();
+
+        // 오른쪽 최종값
+        const lastI  = n - 1;
+        const lastPx = meta.data[lastI]?.y ?? bottom;
+        const prevPx = si === 0 ? bottom : (chart.getDatasetMeta(si-1).data[lastI]?.y ?? bottom);
+        const labelY = (lastPx + prevPx) / 2;
+        let lastVal  = stackedData[si][lastI];
+        if (si > 0) lastVal -= (stackedData[si-1][lastI] || 0);
+        ctx.save();
+        ctx.font = '600 11px "DM Mono",monospace';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(`¥${Math.round(lastVal).toLocaleString()}`, right + 8, labelY);
+        ctx.restore();
+      });
+    },
+  };
+
+  mlyAreaInst = new Chart(document.getElementById('mlyAreaCanvas').getContext('2d'), {
+    type: 'line', data: { labels, datasets },
+    plugins: [areaLabelsPlugin],
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      layout: { padding:{ right:72 } },
+      plugins: {
+        legend: { display:false },
+        tooltip: {
+          backgroundColor:'#1c1e2e', borderColor:'#36384f', borderWidth:1,
+          callbacks: {
+            label(ctx) {
+              if (ctx.dataset.label==='전체') return ` 전체: ¥${Math.round(ctx.parsed.y).toLocaleString()}`;
+              let v = ctx.parsed.y;
+              if (ctx.datasetIndex > 0) v -= ctx.chart.data.datasets[ctx.datasetIndex-1].data[ctx.dataIndex]||0;
+              return ` ${ctx.dataset.label}: ¥${Math.round(v).toLocaleString()}`;
+            },
+          },
+        },
+        mlyEventLines: { events },
+      },
+      scales: {
+        x: { grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#8a8ca8',font:{family:'DM Mono',size:10},maxRotation:0,autoSkip:true,maxTicksLimit:10} },
+        y: { suggestedMax:areaYMax, grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#8a8ca8',font:{family:'DM Mono',size:10},callback:v=>v>=1000?`¥${(v/1000).toFixed(0)}k`:`¥${v}`} },
+      },
+    },
+  });
+}
+
+function buildMlyBarChart(daily, sortedAids, events) {
+  if (mlyBarInst) { mlyBarInst.destroy(); mlyBarInst = null; }
+  const { dates, byAcct, total } = daily;
+  const labels = dates.map(d => { const [,mo,dd]=d.split('-'); return `${+mo}/${+dd}`; });
+
+  const barYMax = Math.max(...total) * 1.18;
+
+  const datasets = sortedAids.map(aid => ({
+    label: aid,
+    data: byAcct[aid],
+    backgroundColor: (ACCT_META[aid]?.color||'#888')+'cc',
+    borderColor: 'transparent', borderWidth:0, stack:'rev',
+  }));
+
+  // 막대 위 합계 레이블 플러그인
+  const barTotalsPlugin = {
+    id: 'mlyBarTotals',
+    afterDatasetsDraw(chart) {
+      const { ctx, scales:{y} } = chart;
+      const lastMeta = chart.getDatasetMeta(datasets.length-1);
+      total.forEach((tot, i) => {
+        if (tot <= 0) return;
+        const bar = lastMeta.data[i]; if (!bar) return;
+        ctx.save();
+        ctx.font='500 9px "DM Mono",monospace'; ctx.fillStyle='#e8eaf5'; ctx.textAlign='center';
+        const lbl = tot>=1000 ? `¥${(tot/1000).toFixed(0)}k` : `¥${Math.round(tot)}`;
+        ctx.fillText(lbl, bar.x, y.getPixelForValue(tot)-4);
+        ctx.restore();
+      });
+    },
+  };
+
+  mlyBarInst = new Chart(document.getElementById('mlyBarCanvas').getContext('2d'), {
+    type: 'bar', data: { labels, datasets },
+    plugins: [barTotalsPlugin],
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display:false },
+        tooltip: {
+          backgroundColor:'#1c1e2e', borderColor:'#36384f', borderWidth:1,
+          callbacks: { label:ctx=>` ${ctx.dataset.label}: ¥${Math.round(ctx.parsed.y).toLocaleString()}` },
+        },
+        mlyEventLines: { events },
+      },
+      scales: {
+        x: { stacked:true, grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#8a8ca8',font:{family:'DM Mono',size:10},maxRotation:0,autoSkip:true,maxTicksLimit:10} },
+        y: { stacked:true, suggestedMax:barYMax, grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#8a8ca8',font:{family:'DM Mono',size:10},callback:v=>v>=1000?`¥${(v/1000).toFixed(0)}k`:`¥${v}`} },
+      },
+    },
+  });
+}
+
+
+function renderMonthly() {
+  const m = CUR_MON;
+  const daily = DAILY_AGG[m];
+  if (!daily) return;
+  const { year, mo, dates, byAcct, total } = daily;
+  const aids = Object.keys(byAcct);
+  const sortedAids = [...aids].sort((a,b) =>
+    byAcct[a].reduce((s,v)=>s+v,0) - byAcct[b].reduce((s,v)=>s+v,0)
+  );
+  const events = getMonthEvents(year, mo, dates);
+  const totalCum = total.reduce((s,v)=>s+v,0);
+
+  document.getElementById('mlyAreaTitle').textContent = `${m}월 매출 누적 추이`;
+  document.getElementById('mlyAreaSub').textContent =
+    `${year}년 ${mo}월 1일 – ${mo}월 ${dates.length}일 | 판매가 기준`;
+
+  // 범례
+  const legendHtml = [
+    ...[...sortedAids].reverse().map(aid => {
+      const acTot = byAcct[aid].reduce((s,v)=>s+v,0);
+      const color  = ACCT_META[aid]?.color||'#888';
+      return `<div style="display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:11px;">
+        <div style="width:10px;height:10px;border-radius:2px;background:${color};"></div>
+        <span style="color:var(--muted);">${aid}</span><span>¥${Math.round(acTot).toLocaleString()}</span>
+      </div>`;
+    }),
+    `<div style="display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:11px;">
+      <div style="width:16px;height:2px;background:rgba(255,255,255,0.85);border-radius:1px;"></div>
+      <span style="color:var(--muted);">전체</span><span>¥${Math.round(totalCum).toLocaleString()}</span>
+    </div>`,
+    events.length ? `<div style="display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:11px;">
+      <div style="width:16px;height:1px;border-top:2px dashed #7c6af5;"></div>
+      <span style="color:var(--muted);">신작 론칭일</span>
+    </div>` : '',
+  ].filter(Boolean).join('');
+  document.getElementById('mlyLegend').innerHTML = legendHtml;
+
+  buildMlyAreaChart(daily, sortedAids, events);
+  buildMlyBarChart(daily, sortedAids, events);
+}
+
+// ═══════════════════════════════════════════
 //  NAV
 // ═══════════════════════════════════════════
 function goPage(id, btn) {
@@ -664,36 +1810,15 @@ function goPage(id, btn) {
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
+  if (id === 'lifecycle' && RAW.length) renderLifecycle();
+  if (id === 'monthly'   && RAW.length) requestAnimationFrame(() => requestAnimationFrame(renderMonthly));
+  if (id === 'accounts'  && RAW.length) renderWorksTable();
 }
 
 // ═══════════════════════════════════════════
 //  INIT — 페이지 열리면 자동 로드
 // ═══════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('loadBtn');
-  loadSheetData(
-    (count) => {
-      btn.className = 'load-btn ok';
-      document.getElementById('loadIcon').textContent = '✓';
-      document.getElementById('loadLabel').textContent = `${count}행 로드됨`;
-      renderAll();
-    },
-    (e) => {
-      btn.className = 'load-btn err';
-      document.getElementById('loadIcon').textContent = '✕';
-      document.getElementById('loadLabel').textContent = '로드 실패';
-      alert(`데이터 로드 실패: ${e.message}`);
-    },
-    (isLoading) => {
-      document.getElementById('loadingOverlay').classList.toggle('show', isLoading);
-      if (isLoading) {
-        btn.className = 'load-btn loading';
-        document.getElementById('loadIcon').textContent = '↻';
-        document.getElementById('loadLabel').textContent = '불러오는 중...';
-      }
-    }
-  );
-});
+window.addEventListener('DOMContentLoaded', () => triggerLoad(false));
 </script>
 </body>
 </html>

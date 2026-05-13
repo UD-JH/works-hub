@@ -142,6 +142,14 @@
       border-color: var(--acc);
       box-shadow: 0 0 0 3px rgba(108,99,255,.1);
     }
+    .bnode.err  { border-color: #f55252 !important; box-shadow: 0 0 0 3px rgba(245,82,82,.12) !important; }
+    .bnode.warn { border-color: #f5a623 !important; box-shadow: 0 0 0 3px rgba(245,166,35,.12) !important; }
+    .insp-issues { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+    .insp-issues-ttl { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+    .insp-issue-item { display:flex; align-items:flex-start; gap:7px; padding:6px 8px; border-radius:6px; margin-bottom:4px; font-size:11px; line-height:1.4; }
+    .insp-issue-item:last-child { margin-bottom:0; }
+    .insp-issue-item.err  { background:rgba(245,82,82,.1);  color:#f55252; }
+    .insp-issue-item.warn { background:rgba(245,166,35,.1); color:#f5a623; }
     .bnode-hd {
       display: flex;
       align-items: center;
@@ -197,19 +205,37 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .port {
+    .port-wrap {
       position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transform: translateY(-50%);
+      z-index: 11;
+    }
+    .port-wrap.out { right: -6px; flex-direction: row-reverse; }
+    .port-wrap.in  { left: -6px; }
+    .port {
       width: 12px;
       height: 12px;
       border-radius: 50%;
       border: 2px solid var(--card);
       cursor: crosshair;
       transition: transform .15s;
-      z-index: 11;
+      flex-shrink: 0;
     }
     .port:hover { transform: scale(1.3); }
-    .port.out { right: -6px; top: 50%; margin-top: -6px; }
-    .port.in  { left: -6px;  top: 50%; margin-top: -6px; }
+    .port-lbl {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 8px;
+      color: var(--muted);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity .15s;
+      pointer-events: none;
+      line-height: 1;
+    }
+    .port-wrap:hover .port-lbl { opacity: 1; }
     .wsvg {
       position: absolute;
       inset: 0;
@@ -288,6 +314,7 @@
     .run-step:last-child  { border-radius: 0 0 10px 10px; }
     .run-step.done   { border-left-color: var(--acc2); background: rgba(67,224,159,.05); }
     .run-step.active { border-left-color: var(--acc);  background: rgba(108,99,255,.08); }
+    .run-step.fail   { border-left-color: #f55252;     background: rgba(245,82,82,.05); }
     .run-ico {
       width: 28px;
       height: 28px;
@@ -301,11 +328,24 @@
     }
     .run-step.done .run-ico   { border-color: var(--acc2); color: var(--acc2); }
     .run-step.active .run-ico { border-color: var(--acc); animation: spin 1s linear infinite; }
+    .run-step.fail .run-ico   { border-color: #f55252; color: #f55252; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .run-step-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
     .run-step-name  { font-size: 12px; font-weight: 500; }
     .run-step-sub   { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px; }
     .run-step.done .run-step-sub   { color: var(--acc2); }
     .run-step.active .run-step-sub { color: var(--acc); }
+    .run-step.fail .run-step-sub   { color: #f55252; }
+    .run-step-meta { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+    .run-step-meta span { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); }
+    .run-step.done .run-step-meta span { color: var(--acc2); opacity: .7; }
+    .run-step.fail .run-step-meta span { color: #f55252; opacity: .8; }
+    .run-step-err { color: #f55252 !important; opacity: 1 !important; max-width: 280px; word-break: break-all; }
+    .run-summary { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted);
+                   margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
+                   width: 100%; max-width: 380px; line-height: 1.6; }
+    .run-summary.success { color: var(--acc2); }
+    .run-summary.fail    { color: #f55252; }
     .run-close {
       margin-top: 24px;
       font-family: 'IBM Plex Mono', monospace;
@@ -367,6 +407,7 @@
     <div class="run-panel" id="runPanel">
       <div class="run-title" id="runTitle">실행 중...</div>
       <div class="run-steps" id="runSteps"></div>
+      <div class="run-summary" id="runSummary"></div>
       <button class="run-close" id="runClose" onclick="closeRunPanel()" style="display:none;">닫기</button>
     </div>
   </div>
@@ -447,6 +488,7 @@ function addNode(modId, x, y) {
   nodes.push(node);
   renderNode(node);
   updateCanvasEmpty();
+  applyValidation();
 }
 
 function renderNode(node) {
@@ -471,8 +513,24 @@ function renderNode(node) {
       <div class="bnode-del" onclick="deleteNode('${node.id}')">x</div>
     </div>
     <div class="bnode-bd">${paramsHtml}</div>
-    ${mod.type !== 'input'  ? `<div class="port in"  style="background:${mod.color}" data-node="${node.id}" data-port="in"  onmousedown="onPortDown(event,'${node.id}','in')"></div>`  : ''}
-    ${mod.type !== 'output' ? `<div class="port out" style="background:${mod.color}" data-node="${node.id}" data-port="out" onmousedown="onPortDown(event,'${node.id}','out')"></div>` : ''}
+    ${(mod.inputPorts || []).map((p, i, arr) => {
+      const top = ((i + 1) / (arr.length + 1) * 100).toFixed(1) + '%';
+      return `<div class="port-wrap in" style="top:${top}">
+        <div class="port in" style="background:${mod.color}"
+          data-node="${node.id}" data-port="${p.id}" data-port-type="in"
+          onmousedown="onPortDown(event,'${node.id}','${p.id}','in')"></div>
+        <span class="port-lbl">${p.label}</span>
+      </div>`;
+    }).join('')}
+    ${(mod.outputPorts || []).map((p, i, arr) => {
+      const top = ((i + 1) / (arr.length + 1) * 100).toFixed(1) + '%';
+      return `<div class="port-wrap out" style="top:${top}">
+        <div class="port out" style="background:${mod.color}"
+          data-node="${node.id}" data-port="${p.id}" data-port-type="out"
+          onmousedown="onPortDown(event,'${node.id}','${p.id}','out')"></div>
+        <span class="port-lbl">${p.label}</span>
+      </div>`;
+    }).join('')}
   `;
 
   el.addEventListener('mousedown', e => {
@@ -512,10 +570,10 @@ function onDragUp() {
   document.removeEventListener('mouseup',   onDragUp);
 }
 
-function onPortDown(e, nodeId, portType) {
+function onPortDown(e, nodeId, portId, portType) {
   e.stopPropagation();
   if (portType === 'out') {
-    connectStart = { nodeId };
+    connectStart = { nodeId, portId };
     document.addEventListener('mouseup', onPortUp);
   }
 }
@@ -524,31 +582,49 @@ function onPortUp(e) {
   document.removeEventListener('mouseup', onPortUp);
   if (!connectStart) return;
   const target = e.target;
-  if (target.classList.contains('port') && target.dataset.port === 'in') {
+  if (target.classList.contains('port') && target.dataset.portType === 'in') {
     const toNodeId = target.dataset.node;
+    const toPortId = target.dataset.port;
     if (toNodeId !== connectStart.nodeId) {
-      const exists = edges.find(ed => ed.from === connectStart.nodeId && ed.to === toNodeId);
-      if (!exists) {
-        edges.push({ from: connectStart.nodeId, to: toNodeId });
+      const exists = edges.find(ed =>
+        ed.from === connectStart.nodeId && ed.fromPort === connectStart.portId &&
+        ed.to   === toNodeId            && ed.toPort   === toPortId
+      );
+      const alreadyHasInput = edges.some(ed => ed.to === toNodeId && ed.toPort === toPortId);
+      if (alreadyHasInput) {
+        showToast('이미 연결된 입력 포트입니다');
+      } else if (!exists) {
+        edges.push({ from: connectStart.nodeId, fromPort: connectStart.portId, to: toNodeId, toPort: toPortId });
         drawWires();
+        applyValidation();
       }
     }
   }
   connectStart = null;
 }
 
+function getPortPos(nodeId, portId, portType) {
+  const el = document.querySelector(
+    `[data-node="${nodeId}"][data-port="${portId}"][data-port-type="${portType}"]`
+  );
+  if (!el) return null;
+  const cr = canvas.getBoundingClientRect();
+  const r  = el.getBoundingClientRect();
+  return {
+    x: portType === 'out' ? r.right - cr.left : r.left - cr.left,
+    y: r.top + r.height / 2 - cr.top,
+  };
+}
+
 function drawWires() {
   const svg = document.getElementById('wsvg');
   svg.innerHTML = '';
-  const cr = canvas.getBoundingClientRect();
   edges.forEach((edge, idx) => {
-    const fn = document.getElementById(edge.from);
-    const tn = document.getElementById(edge.to);
-    if (!fn || !tn) return;
-    const fr = fn.getBoundingClientRect();
-    const tr = tn.getBoundingClientRect();
-    const x1 = fr.right  - cr.left, y1 = fr.top + fr.height/2 - cr.top;
-    const x2 = tr.left   - cr.left, y2 = tr.top + tr.height/2 - cr.top;
+    const fromPos = getPortPos(edge.from, edge.fromPort || 'out', 'out');
+    const toPos   = getPortPos(edge.to,   edge.toPort   || 'in',  'in');
+    if (!fromPos || !toPos) return;
+    const x1 = fromPos.x, y1 = fromPos.y;
+    const x2 = toPos.x,   y2 = toPos.y;
     const cx = (x1+x2)/2;
     const pid = 'wire'+idx;
     const fromMod = modules.find(m => m.id === nodes.find(n => n.id === edge.from)?.modId);
@@ -610,6 +686,18 @@ function renderInspector(nodeId) {
         </div>
       `).join('')}
     </div>
+    ${(() => {
+      const issues = validateGraph().filter(i => i.nodeId === nodeId);
+      if (!issues.length) return '';
+      return `<div class="insp-issues">
+        <div class="insp-issues-ttl">진단</div>
+        ${issues.map(i => `
+          <div class="insp-issue-item ${i.level}">
+            <span>${i.level === 'error' ? '✕' : '!'}</span>
+            <span>${i.message}</span>
+          </div>`).join('')}
+      </div>`;
+    })()}
   `;
 }
 
@@ -633,6 +721,7 @@ function deleteNode(nodeId) {
   document.getElementById(nodeId)?.remove();
   drawWires();
   updateCanvasEmpty();
+  applyValidation();
   if (selNode === nodeId) {
     selNode = null;
     document.getElementById('inspector').innerHTML = '<div class="insp-empty">노드를 클릭하면<br>설정이 표시됩니다</div>';
@@ -643,14 +732,106 @@ function updateCanvasEmpty() {
   document.getElementById('canvasEmpty').style.display = nodes.length ? 'none' : 'block';
 }
 
+function hasCycle() {
+  const visited = new Set();
+  const inStack = new Set();
+  function dfs(nodeId) {
+    visited.add(nodeId);
+    inStack.add(nodeId);
+    for (const edge of edges.filter(e => e.from === nodeId)) {
+      if (!visited.has(edge.to)) {
+        if (dfs(edge.to)) return true;
+      } else if (inStack.has(edge.to)) {
+        return true;
+      }
+    }
+    inStack.delete(nodeId);
+    return false;
+  }
+  for (const node of nodes) {
+    if (!visited.has(node.id) && dfs(node.id)) return true;
+  }
+  return false;
+}
+
+function validateGraph() {
+  const issues = [];
+  for (const node of nodes) {
+    const mod = modules.find(m => m.id === node.modId);
+    if (!mod) continue;
+    // 입력 연결 없음 — 포트별 체크
+    (mod.inputPorts || []).forEach(p => {
+      if (!edges.some(e => e.to === node.id && (e.toPort || 'in') === p.id)) {
+        issues.push({ nodeId: node.id, level: 'error', message: `입력 포트 "${p.label}"에 연결이 없습니다` });
+      }
+    });
+    // 출력 연결 없음 — 포트별 체크 (노드가 2개 이상일 때)
+    if (nodes.length > 1) {
+      (mod.outputPorts || []).forEach(p => {
+        if (!edges.some(e => e.from === node.id && (e.fromPort || 'out') === p.id)) {
+          issues.push({ nodeId: node.id, level: 'warn', message: `출력 포트 "${p.label}"가 연결되지 않았습니다` });
+        }
+      });
+    }
+    // 고립 노드 — error: 러너가 의도치 않은 소스로 실행할 수 있음
+    if (nodes.length > 1 && !edges.some(e => e.from === node.id || e.to === node.id)) {
+      issues.push({ nodeId: node.id, level: 'error', message: '다른 노드와 연결되어 있지 않습니다' });
+    }
+  }
+  // 동일 toPort 다중 입력 — 병합 미지원
+  for (const node of nodes) {
+    const portCount = {};
+    edges.filter(e => e.to === node.id).forEach(e => {
+      const tp = e.toPort || 'in';
+      portCount[tp] = (portCount[tp] || 0) + 1;
+    });
+    for (const [port, cnt] of Object.entries(portCount)) {
+      if (cnt > 1) {
+        issues.push({ nodeId: node.id, level: 'error', message: `입력 포트 "${port}"에 ${cnt}개의 연결이 있습니다 (병합 미지원)` });
+      }
+    }
+  }
+  // 순환 참조
+  if (hasCycle()) {
+    issues.push({ nodeId: null, level: 'error', message: '순환 참조가 있습니다' });
+  }
+  return issues;
+}
+
+function applyValidation() {
+  const issues = validateGraph();
+  document.querySelectorAll('.bnode').forEach(el => el.classList.remove('err', 'warn'));
+  for (const issue of issues) {
+    if (!issue.nodeId) continue;
+    const el = document.getElementById(issue.nodeId);
+    if (!el) continue;
+    if (issue.level === 'error') el.classList.add('err');
+    else if (issue.level === 'warn' && !el.classList.contains('err')) el.classList.add('warn');
+  }
+  if (selNode) renderInspector(selNode);
+}
+
 async function saveWorkflow() {
-  const name = document.getElementById('wfName').value || '새 워크플로우';
-  const id   = 'wf-' + Date.now();
-  const wf   = {
-    id, name,
+  const errors = validateGraph().filter(i => i.level === 'error');
+  if (errors.length) {
+    applyValidation();
+    showToast(`오류 ${errors.length}건이 있습니다 — 저장이 취소됐습니다`);
+    return;
+  }
+  const name    = document.getElementById('wfName').value || '새 워크플로우';
+  const urlParam = new URLSearchParams(location.search).get('wf');
+  const isUpdate = !!urlParam;
+  const id      = isUpdate ? urlParam : 'wf-' + Date.now();
+  const now     = new Date().toISOString();
+  const wf      = {
+    id,
+    schemaVersion: 1,
+    name,
     desc: nodes.map(n => modules.find(m => m.id === n.modId)?.name).join(' → '),
     color: '#6c63ff',
-    updatedAt: '방금',
+    createdAt: isUpdate ? undefined : now,  // 서버에서 기존 값 보존 (undefined → 전송 안 됨)
+    updatedAt: now,
+    // lastRunAt / lastRunStatus는 보내지 않음 — 서버가 기존 값 유지
     nodes: nodes.map(n => ({ id: n.id, modId: n.modId, x: n.x, y: n.y, params: n.params })),
     edges
   };
@@ -659,51 +840,106 @@ async function saveWorkflow() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(wf)
   });
-  if (res.ok) showToast('허브에 저장됐어요');
+  if (res.ok) {
+    if (!isUpdate) {
+      history.replaceState(null, '', '/builder.html?wf=' + id);
+    }
+    showToast(isUpdate ? '변경 사항이 저장됐어요' : '허브에 저장됐어요');
+  }
 }
 
 async function runWorkflow() {
   if (!nodes.length) { showToast('노드를 먼저 추가하세요'); return; }
-  const ordered = getExecutionOrder();
+  const errors = validateGraph().filter(i => i.level === 'error');
+  if (errors.length) {
+    applyValidation();
+    const cycleErr = errors.find(i => !i.nodeId);
+    showToast(cycleErr ? '순환 참조가 있습니다' : `오류 ${errors.length}건 — 빨간 노드를 확인하세요`);
+    return;
+  }
+
+  const ordered = WorkflowRunner.getExecutionOrder(nodes, edges);
   if (!ordered) { showToast('노드를 연결해주세요'); return; }
 
-  const panel = document.getElementById('runPanel');
-  const stepsEl = document.getElementById('runSteps');
+  const panel     = document.getElementById('runPanel');
+  const stepsEl   = document.getElementById('runSteps');
+  const summaryEl = document.getElementById('runSummary');
   panel.classList.add('show');
   document.getElementById('runClose').style.display = 'none';
+  document.getElementById('runTitle').textContent = '실행 중...';
+  summaryEl.className   = 'run-summary';
+  summaryEl.textContent = '';
 
-  stepsEl.innerHTML = ordered.map(nodeId => {
+  stepsEl.innerHTML = ordered.map((nodeId, i) => {
     const node = nodes.find(n => n.id === nodeId);
     const mod  = modules.find(m => m.id === node.modId);
     return `<div class="run-step" id="rs_${nodeId}">
       <div class="run-ico">○</div>
-      <div>
-        <div class="run-step-name">${mod.name}</div>
+      <div class="run-step-body">
+        <div class="run-step-name">${i + 1}. ${mod?.name || node.modId}</div>
         <div class="run-step-sub">대기 중</div>
+        <div class="run-step-meta" id="rsm_${nodeId}"></div>
       </div>
     </div>`;
   }).join('');
 
-  let data = {};
-  for (const nodeId of ordered) {
-    const node   = nodes.find(n => n.id === nodeId);
-    const stepEl = document.getElementById('rs_' + nodeId);
-    stepEl.className = 'run-step active';
-    stepEl.querySelector('.run-ico').textContent = '↻';
-    stepEl.querySelector('.run-step-sub').textContent = '실행 중...';
-    try {
-      await loadModuleScript(node.modId);
-      const modObj = getModuleObject(node.modId);
-      data = await modObj.run(data, node.params);
-      stepEl.className = 'run-step done';
-      stepEl.querySelector('.run-ico').textContent = '✓';
-      stepEl.querySelector('.run-step-sub').textContent = `${data.count || 0}개 처리됨`;
-    } catch(e) {
-      stepEl.querySelector('.run-step-sub').textContent = '오류: ' + e.message;
-      break;
+  await WorkflowRunner.run({ nodes, edges }, {
+    onStepStart(nodeId, { inputCount }) {
+      const el = document.getElementById('rs_' + nodeId);
+      el.className = 'run-step active';
+      el.querySelector('.run-ico').textContent     = '↻';
+      el.querySelector('.run-step-sub').textContent = '실행 중...';
+      const meta = document.getElementById('rsm_' + nodeId);
+      meta.innerHTML = inputCount > 0 ? `<span>입력 ${inputCount}개</span>` : '';
+    },
+    onStepDone(nodeId, { duration, inputCount, outputCount }) {
+      const el = document.getElementById('rs_' + nodeId);
+      el.className = 'run-step done';
+      el.querySelector('.run-ico').textContent      = '✓';
+      el.querySelector('.run-step-sub').textContent = `${outputCount}개 처리됨`;
+      document.getElementById('rsm_' + nodeId).innerHTML =
+        `<span>입력 ${inputCount}개</span><span>→ 출력 ${outputCount}개</span><span>${duration}ms</span>`;
+    },
+    onStepFail(nodeId, { duration, inputCount, error }) {
+      const el = document.getElementById('rs_' + nodeId);
+      el.className = 'run-step fail';
+      el.querySelector('.run-ico').textContent      = '✕';
+      el.querySelector('.run-step-sub').textContent = '실패';
+      document.getElementById('rsm_' + nodeId).innerHTML =
+        `<span class="run-step-err">${error}</span><span>${duration}ms</span>`;
+    },
+    async onComplete({ success, steps, totalDuration, runAt, lastSuccessNodeId, failedNodeId }) {
+      document.getElementById('runTitle').textContent = success ? '실행 완료' : '실행 실패';
+      summaryEl.className = 'run-summary ' + (success ? 'success' : 'fail');
+
+      const modName = nid => {
+        const n = nodes.find(n => n.id === nid);
+        return n ? (modules.find(m => m.id === n.modId)?.name || n.modId) : nid;
+      };
+
+      if (success) {
+        summaryEl.textContent =
+          `✓ 완료 · ${steps.length}/${steps.length}단계 · 총 ${totalDuration}ms`;
+      } else {
+        const lastOk = lastSuccessNodeId ? modName(lastSuccessNodeId) : '없음';
+        summaryEl.innerHTML =
+          `✕ 실패 · <b>${modName(failedNodeId)}</b>에서 중단<br>` +
+          `마지막 성공: ${lastOk} · 총 ${totalDuration}ms`;
+      }
+
+      // lastRunAt / lastRunStatus 저장
+      const wfId = new URLSearchParams(location.search).get('wf');
+      if (wfId) {
+        fetch('/api/workflow/run-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: wfId, lastRunAt: runAt, lastRunStatus: success ? 'success' : 'fail' })
+        }).catch(() => {});
+      }
+
+      document.getElementById('runClose').style.display = 'block';
     }
-  }
-  document.getElementById('runClose').style.display = 'block';
+  });
 }
 
 function getExecutionOrder() {
@@ -737,13 +973,7 @@ async function loadModuleScript(modId) {
 }
 
 function getModuleObject(modId) {
-  const map = {
-    'folder-open':  typeof FolderOpen  !== 'undefined' ? FolderOpen  : null,
-    'image-select': typeof ImageSelect !== 'undefined' ? ImageSelect : null,
-    'rename':       typeof Rename      !== 'undefined' ? Rename      : null,
-    'download':     typeof Download    !== 'undefined' ? Download    : null,
-  };
-  return map[modId];
+  return window.WorksHubModules?.[modId] || null;
 }
 
 function closeRunPanel() {
@@ -773,12 +1003,20 @@ async function loadWorkflowFromUrl() {
     nodeCount++;
     renderNode(nodes[nodes.length - 1]);
   }
-  edges = wf.edges || [];
+  // 구 포맷({from,to}) → 신 포맷({from,fromPort,to,toPort}) 자동 승격
+  edges = (wf.edges || []).map(ed => ({
+    from:     ed.from,
+    fromPort: ed.fromPort || 'out',
+    to:       ed.to,
+    toPort:   ed.toPort   || 'in',
+  }));
   drawWires();
   updateCanvasEmpty();
+  applyValidation();
 }
 
 init().then(() => loadWorkflowFromUrl());
 </script>
+<script src="/scripts/workflow-runner.js"></script>
 </body>
 </html>

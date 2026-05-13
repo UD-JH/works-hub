@@ -75,6 +75,7 @@
     }
     .run-modal-step.done   { border-left-color: var(--acc2); background: rgba(67,224,159,.05); }
     .run-modal-step.active { border-left-color: var(--acc);  background: rgba(108,99,255,.08); }
+    .run-modal-step.fail   { border-left-color: #f55252;     background: rgba(245,82,82,.05); }
     .run-modal-step-ico {
       width: 26px;
       height: 26px;
@@ -89,11 +90,23 @@
     }
     .run-modal-step.done .run-modal-step-ico   { border-color: var(--acc2); color: var(--acc2); }
     .run-modal-step.active .run-modal-step-ico { border-color: var(--acc); animation: spin 1s linear infinite; }
+    .run-modal-step.fail .run-modal-step-ico   { border-color: #f55252; color: #f55252; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .run-modal-step-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
     .run-modal-step-name { font-size: 12px; font-weight: 500; }
     .run-modal-step-sub  { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px; }
     .run-modal-step.done .run-modal-step-sub   { color: var(--acc2); }
     .run-modal-step.active .run-modal-step-sub { color: var(--acc); }
+    .run-modal-step.fail .run-modal-step-sub   { color: #f55252; }
+    .run-modal-step-meta { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+    .run-modal-step-meta span { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); }
+    .run-modal-step.done .run-modal-step-meta span { color: var(--acc2); opacity: .7; }
+    .run-modal-step.fail .run-modal-step-meta span { color: #f55252; opacity: .8; }
+    .run-modal-step-err { color: #f55252 !important; opacity: 1 !important; max-width: 260px; word-break: break-all; }
+    .run-modal-summary { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted);
+                         margin-bottom: 14px; padding: 8px 0 0; line-height: 1.6; }
+    .run-modal-summary.success { color: var(--acc2); }
+    .run-modal-summary.fail    { color: #f55252; }
     .run-modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
     .run-modal-btn {
       font-family: 'IBM Plex Mono', monospace;
@@ -145,6 +158,7 @@
     <div class="run-modal-title" id="runModalTitle"></div>
     <div class="run-modal-desc"  id="runModalDesc"></div>
     <div class="run-modal-steps" id="runModalSteps"></div>
+    <div class="run-modal-summary" id="runModalSummary"></div>
     <div class="run-modal-btns">
       <button class="run-modal-btn btn-cancel" id="runModalCancel" onclick="closeRunModal()">닫기</button>
       <button class="run-modal-btn btn-start"  id="runModalStart"  onclick="startRun()">실행</button>
@@ -152,6 +166,7 @@
   </div>
 </div>
 
+<script src="scripts/workflow-runner.js"></script>
 <script src="scripts/hub.js"></script>
 </body>
 </html>

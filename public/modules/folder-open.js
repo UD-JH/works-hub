@@ -1,10 +1,5 @@
-const FolderOpen = {
-  id: 'folder-open',
-  name: '폴더 열기',
-  type: 'input',
-  color: '#6c63ff',
-
-  // 실행 로직
+window.WorksHubModules = window.WorksHubModules || {};
+window.WorksHubModules['folder-open'] = {
   run: async (input, params) => {
     return new Promise((resolve) => {
       const fileInput = document.createElement('input');

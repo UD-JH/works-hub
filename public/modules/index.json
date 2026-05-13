@@ -4,42 +4,58 @@
       "id": "folder-open",
       "name": "폴더 열기",
       "type": "input",
+      "category": "file",
+      "version": "1.0.0",
+      "inputPorts":  [],
+      "outputPorts": [{ "id": "out", "label": "파일" }],
       "color": "#6c63ff",
       "desc": "로컬 폴더에서 파일을 불러옵니다",
       "params": [
-        { "key": "accept", "label": "파일 형식", "default": "*" }
+        { "key": "accept", "label": "파일 형식", "default": "*", "inputType": "text" }
       ]
     },
     {
       "id": "image-select",
       "name": "이미지 선택",
       "type": "filter",
+      "category": "image",
+      "version": "1.0.0",
+      "inputPorts":  [{ "id": "in", "label": "파일" }],
+      "outputPorts": [{ "id": "out", "label": "필터됨" }],
       "color": "#ffa94d",
       "desc": "이미지 파일만 필터링합니다",
       "params": [
-        { "key": "extensions", "label": "확장자", "default": "jpg,png,webp,gif" }
+        { "key": "extensions", "label": "확장자", "default": "jpg,png,webp,gif", "inputType": "text" }
       ]
     },
     {
       "id": "rename",
       "name": "파일명 변경",
       "type": "transform",
+      "category": "file",
+      "version": "1.0.0",
+      "inputPorts":  [{ "id": "in", "label": "파일" }],
+      "outputPorts": [{ "id": "out", "label": "변경됨" }],
       "color": "#6c63ff",
       "desc": "파일명을 패턴에 맞게 일괄 변경합니다",
       "params": [
-        { "key": "pattern", "label": "패턴", "default": "IMG_{n}" },
-        { "key": "start", "label": "시작 번호", "default": "1" },
-        { "key": "padding", "label": "자릿수", "default": "3" }
+        { "key": "pattern", "label": "패턴",      "default": "IMG_{n}",  "inputType": "text" },
+        { "key": "start",   "label": "시작 번호", "default": "1",        "inputType": "number" },
+        { "key": "padding", "label": "자릿수",    "default": "3",        "inputType": "number" }
       ]
     },
     {
       "id": "download",
       "name": "다운로드",
       "type": "output",
+      "category": "file",
+      "version": "1.0.0",
+      "inputPorts":  [{ "id": "in", "label": "파일" }],
+      "outputPorts": [],
       "color": "#43e09f",
       "desc": "처리된 파일을 ZIP으로 다운로드합니다",
       "params": [
-        { "key": "filename", "label": "ZIP 파일명", "default": "output" }
+        { "key": "filename", "label": "ZIP 파일명", "default": "output", "inputType": "text" }
       ]
     }
   ]

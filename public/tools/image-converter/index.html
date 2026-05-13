@@ -72,14 +72,26 @@
     font-size: 15px;
   }
 
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
   .back-btn {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--surface2, #161820);
+    border: 1px solid var(--border);
     color: var(--muted);
     text-decoration: none;
-    transition: color 0.15s;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  .back-btn:hover { color: var(--text); }
+  .back-btn:hover { color: var(--text); border-color: #36384f; }
+  .back-btn svg { width: 14px; height: 14px; }
 
   /* Layout */
   .wrap {
@@ -358,7 +370,7 @@
   /* Rename config */
   .rename-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
     gap: 16px;
     padding: 22px;
   }
@@ -541,11 +553,15 @@
 <body>
 
 <div class="header">
-  <div class="logo">
-    <div class="logo-icon">🖼</div>
-    이미지 변환기 & 파일명 변경
+  <div class="brand">
+    <a class="back-btn" href="/index.html" title="허브로 돌아가기" aria-label="허브로 돌아가기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5L12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
+    </a>
+    <div class="logo">
+      <div class="logo-icon">🖼</div>
+      이미지 변환기 & 파일명 변경
+    </div>
   </div>
-  <a class="back-btn" href="index.html">← WorkHub</a>
 </div>
 
 <div class="wrap">
@@ -641,24 +657,28 @@
     </div>
 
     <div class="rename-grid">
-      <div class="field">
-        <div class="field-label">접두사 (Prefix)</div>
-        <input type="text" id="prefix" value="m_" placeholder="예: m_, img_, photo_" oninput="updatePreview()">
-      </div>
-      <div class="field">
-        <div class="field-label">시작 번호</div>
-        <input type="number" id="startNum" value="1" min="0" oninput="updatePreview()">
-      </div>
-      <div class="field">
-        <div class="field-label">번호 자릿수</div>
-        <select id="padding" onchange="updatePreview()">
-          <option value="1">1자리 (1, 2, 3…)</option>
-          <option value="2">2자리 (01, 02, 03…)</option>
-          <option value="3" selected>3자리 (001, 002, 003…)</option>
-          <option value="4">4자리 (0001, 0002…)</option>
-        </select>
-      </div>
-    </div>
+  <div class="field">
+    <div class="field-label">접두사 (Prefix)</div>
+    <input type="text" id="prefix" value="" placeholder="예: m_, img_" oninput="updatePreview()">
+  </div>
+  <div class="field">
+    <div class="field-label">접미사 (Suffix)</div>
+    <input type="text" id="suffix" value="_m" placeholder="예: _m, _img" oninput="updatePreview()">
+  </div>
+  <div class="field">
+    <div class="field-label">시작 번호</div>
+    <input type="number" id="startNum" value="1" min="0" oninput="updatePreview()">
+  </div>
+  <div class="field">
+    <div class="field-label">번호 자릿수</div>
+    <select id="padding" onchange="updatePreview()">
+      <option value="1">1자리 (1, 2, 3…)</option>
+      <option value="2">2자리 (01, 02, 03…)</option>
+      <option value="3" selected>3자리 (001, 002, 003…)</option>
+      <option value="4">4자리 (0001, 0002…)</option>
+    </select>
+  </div>
+</div>
 
     <!-- Preview strip -->
     <div class="preview-strip">
@@ -780,7 +800,8 @@
 
     files.forEach((f, i) => {
       const num = String(startNum + i).padStart(pad, '0');
-      const newName = `${prefix}${num}.png`;
+      const suffix = document.getElementById('suffix')?.value || '';
+      const newName = `${prefix}${num}${suffix}.png`;
       f.newName = newName;
 
       // Badge
@@ -838,9 +859,10 @@
 
     const examples = [];
     for (let i = 0; i < Math.min(4, Math.max(3, files.length)); i++) {
-      examples.push(`${prefix}${String(startNum + i).padStart(pad, '0')}.png`);
+      const suffix = document.getElementById('suffix').value || '';
+      examples.push(`${prefix}${String(startNum + i).padStart(pad, '0')}${suffix}.png`);
     }
-
+    
     const container = document.getElementById('previewExamples');
     container.innerHTML = examples.map(e => `<span class="preview-chip">${e}</span>`).join('');
 

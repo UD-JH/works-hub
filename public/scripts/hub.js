@@ -30,7 +30,7 @@ async function loadWorkflows() {
         <div class="card-desc">${wf.desc}</div>
         <div class="card-footer">
           <span class="card-tag">workflow</span>
-          <span class="card-meta">${wf.updatedAt}</span>
+          <span class="card-meta">${wf.updatedAt ? new Date(wf.updatedAt).toLocaleDateString('ko-KR') : ''}</span>
         </div>
       </div>
       <button class="card-menu-btn" onclick="editWorkflow(event,'${wf.id}')">...</button>
@@ -39,37 +39,47 @@ async function loadWorkflows() {
 }
 
 async function openRunModal(wfId) {
-  // workflows/index.json 에서 워크플로우 찾기
   const res  = await fetch('/workflows/index.json');
   const data = await res.json();
   const wf   = data.workflows.find(w => w.id === wfId);
   if (!wf) return;
 
-  currentWf = wf;
+  // 구 포맷 엣지 자동 승격
+  currentWf = {
+    ...wf,
+    edges: (wf.edges || []).map(ed => ({
+      from:     ed.from,
+      fromPort: ed.fromPort || 'out',
+      to:       ed.to,
+      toPort:   ed.toPort   || 'in',
+    })),
+  };
 
-  // 모듈 목록 로드
   const modRes  = await fetch('/modules/index.json');
   const modData = await modRes.json();
   wfModules = modData.modules;
 
-  // 모달 내용 세팅
   document.getElementById('runModalTitle').textContent = wf.name;
   document.getElementById('runModalDesc').textContent  = wf.desc;
-  document.getElementById('runModalSteps').innerHTML   = (wf.nodes || []).map(n => {
+  document.getElementById('runModalSummary').textContent = '';
+  document.getElementById('runModalSummary').className   = 'run-modal-summary';
+  const execOrder = WorkflowRunner.getExecutionOrder(currentWf.nodes, currentWf.edges)
+                    || currentWf.nodes.map(n => n.id);
+  document.getElementById('runModalSteps').innerHTML = execOrder.map((nid, i) => {
+    const n   = currentWf.nodes.find(n => n.id === nid);
     const mod = wfModules.find(m => m.id === n.modId);
     return `<div class="run-modal-step" id="rms_${n.id}">
       <div class="run-modal-step-ico">○</div>
-      <div>
-        <div class="run-modal-step-name">${mod?.name || n.modId}</div>
+      <div class="run-modal-step-body">
+        <div class="run-modal-step-name">${i + 1}. ${mod?.name || n.modId}</div>
         <div class="run-modal-step-sub">대기 중</div>
+        <div class="run-modal-step-meta" id="rmsm_${n.id}"></div>
       </div>
     </div>`;
   }).join('');
 
-  // 버튼 초기화
-  document.getElementById('runModalStart').style.display  = 'block';
-  document.getElementById('runModalCancel').textContent   = '닫기';
-
+  document.getElementById('runModalStart').style.display = 'block';
+  document.getElementById('runModalCancel').textContent  = '닫기';
   document.getElementById('runModalBg').classList.add('show');
 }
 
@@ -86,79 +96,65 @@ function editWorkflow(e, wfId) {
 async function startRun() {
   if (!currentWf) return;
 
-  // 실행 버튼 숨기기
   document.getElementById('runModalStart').style.display = 'none';
   document.getElementById('runModalCancel').textContent  = '닫기';
 
-  // 실행 순서 정렬
-  const ordered = getExecutionOrder(currentWf.nodes, currentWf.edges);
-  if (!ordered) {
-    document.getElementById('runModalDesc').textContent = '노드가 연결되지 않았어요.';
-    return;
-  }
+  const summaryEl = document.getElementById('runModalSummary');
+  summaryEl.textContent = '';
+  summaryEl.className   = 'run-modal-summary';
 
-  let data = {};
-  for (const nodeId of ordered) {
-    const n      = currentWf.nodes.find(n => n.id === nodeId);
-    const stepEl = document.getElementById('rms_' + nodeId);
+  await WorkflowRunner.run(currentWf, {
+    onStepStart(nodeId, { inputCount }) {
+      const el = document.getElementById('rms_' + nodeId);
+      el.className = 'run-modal-step active';
+      el.querySelector('.run-modal-step-ico').textContent  = '↻';
+      el.querySelector('.run-modal-step-sub').textContent  = '실행 중...';
+      const meta = document.getElementById('rmsm_' + nodeId);
+      meta.innerHTML = inputCount > 0 ? `<span>입력 ${inputCount}개</span>` : '';
+    },
+    onStepDone(nodeId, { duration, inputCount, outputCount }) {
+      const el = document.getElementById('rms_' + nodeId);
+      el.className = 'run-modal-step done';
+      el.querySelector('.run-modal-step-ico').textContent = '✓';
+      el.querySelector('.run-modal-step-sub').textContent = `${outputCount}개 처리됨`;
+      document.getElementById('rmsm_' + nodeId).innerHTML =
+        `<span>입력 ${inputCount}개</span><span>→ 출력 ${outputCount}개</span><span>${duration}ms</span>`;
+    },
+    onStepFail(nodeId, { duration, inputCount, error }) {
+      const el = document.getElementById('rms_' + nodeId);
+      el.className = 'run-modal-step fail';
+      el.querySelector('.run-modal-step-ico').textContent = '✕';
+      el.querySelector('.run-modal-step-sub').textContent = '실패';
+      document.getElementById('rmsm_' + nodeId).innerHTML =
+        `<span class="run-modal-step-err">${error}</span><span>${duration}ms</span>`;
+    },
+    onComplete({ success, steps, totalDuration, runAt, lastSuccessNodeId, failedNodeId }) {
+      summaryEl.className = 'run-modal-summary ' + (success ? 'success' : 'fail');
 
-    stepEl.className = 'run-modal-step active';
-    stepEl.querySelector('.run-modal-step-ico').textContent = '↻';
-    stepEl.querySelector('.run-modal-step-sub').textContent = '실행 중...';
+      const modName = nid => {
+        const n = currentWf.nodes.find(n => n.id === nid);
+        if (!n) return nid;
+        return wfModules.find(m => m.id === n.modId)?.name || n.modId;
+      };
 
-    try {
-      await loadModuleScript(n.modId);
-      const modObj = getModuleObject(n.modId);
-      data = await modObj.run(data, n.params);
+      if (success) {
+        summaryEl.textContent =
+          `✓ 완료 · ${steps.length}/${steps.length}단계 · 총 ${totalDuration}ms`;
+      } else {
+        const lastOk = lastSuccessNodeId ? modName(lastSuccessNodeId) : '없음';
+        summaryEl.innerHTML =
+          `✕ 실패 · <b>${modName(failedNodeId)}</b>에서 중단<br>` +
+          `마지막 성공: ${lastOk} · 총 ${totalDuration}ms`;
+      }
 
-      stepEl.className = 'run-modal-step done';
-      stepEl.querySelector('.run-modal-step-ico').textContent = 'V';
-      stepEl.querySelector('.run-modal-step-sub').textContent = `${data.count || 0}개 처리됨`;
-    } catch(e) {
-      stepEl.querySelector('.run-modal-step-sub').textContent = '오류: ' + e.message;
-      break;
+      // lastRunAt / lastRunStatus 저장
+      fetch('/api/workflow/run-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: currentWf.id, lastRunAt: runAt, lastRunStatus: success ? 'success' : 'fail' })
+      }).catch(() => {});
     }
-  }
-}
-
-function getExecutionOrder(nodes, edges) {
-  if (!edges.length && nodes.length === 1) return [nodes[0].id];
-  const inDegree = {};
-  nodes.forEach(n => { inDegree[n.id] = 0; });
-  edges.forEach(e => { inDegree[e.to] = (inDegree[e.to] || 0) + 1; });
-  const queue  = nodes.filter(n => inDegree[n.id] === 0).map(n => n.id);
-  const result = [];
-  while (queue.length) {
-    const cur = queue.shift();
-    result.push(cur);
-    edges.filter(e => e.from === cur).forEach(e => {
-      inDegree[e.to]--;
-      if (inDegree[e.to] === 0) queue.push(e.to);
-    });
-  }
-  return result.length === nodes.length ? result : null;
-}
-
-async function loadModuleScript(modId) {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[data-mod="${modId}"]`)) return resolve();
-    const s = document.createElement('script');
-    s.src = `/modules/${modId}.js`;
-    s.dataset.mod = modId;
-    s.onload = resolve;
-    s.onerror = reject;
-    document.head.appendChild(s);
   });
-}
-
-function getModuleObject(modId) {
-  const map = {
-    'folder-open':  typeof FolderOpen  !== 'undefined' ? FolderOpen  : null,
-    'image-select': typeof ImageSelect !== 'undefined' ? ImageSelect : null,
-    'rename':       typeof Rename      !== 'undefined' ? Rename      : null,
-    'download':     typeof Download    !== 'undefined' ? Download    : null,
-  };
-  return map[modId];
 }
 
 loadTools();

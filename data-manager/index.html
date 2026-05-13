@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>파일명 변경기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d12;
+    --surface: #13131a;
+    --surface2: #1a1a24;
+    --border: #2a2a38;
+    --text: #eeeef5;
+    --muted: #666680;
+    --accent: #f0a060;
+    --accent2: #60f0a0;
+    --accent3: #6090f0;
+    --danger: #f06060;
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(96,144,240,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 40px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(13,13,18,0.92);
+    backdrop-filter: blur(16px);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.03em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 30px; height: 30px;
+    background: linear-gradient(135deg, var(--accent3), #a060f0);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+
+  .back-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .back-btn:hover { color: var(--text); }
+
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 40px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+  }
+
+  .page-title span { color: var(--accent3); }
+
+  .page-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 10px;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .panel-head {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .panel-body {
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .field input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+
+  .field input:focus { border-color: var(--accent3); }
+
+  .field .hint {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 22px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--accent3);
+    color: var(--bg);
+  }
+  .btn-primary:hover { filter: brightness(1.15); }
+
+  .btn-danger {
+    background: rgba(240,96,96,0.12);
+    border: 1px solid rgba(240,96,96,0.3);
+    color: var(--danger);
+  }
+  .btn-danger:hover { background: rgba(240,96,96,0.2); }
+
+  .btn-ghost {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .status-dot.active {
+    background: var(--accent2);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .log-box {
+    padding: 16px 22px;
+    height: 240px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .log-line {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .log-line.success { color: var(--accent2); }
+  .log-line.error   { color: var(--danger); }
+  .log-line.info    { color: var(--accent3); }
+
+  .log-box::-webkit-scrollbar { width: 4px; }
+  .log-box::-webkit-scrollbar-track { background: transparent; }
+  .log-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .preview-box {
+    padding: 14px 22px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 2;
+  }
+
+  .preview-box span { color: var(--accent3); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">✏️</div>
+    파일명 변경기
+  </div>
+  <a class="back-btn" href="../index.html">← Works Hub</a>
+</div>
+
+<div class="wrap">
+
+  <div>
+    <div class="page-title">파일명 <span>자동 변경</span></div>
+    <div class="page-sub">
+      감시 폴더에 이미지가 들어오면 규칙에 따라 자동으로 파일명을 바꿔줘요.<br>
+      클립스튜디오 추출 파일 기준: <code style="color:var(--accent3)">3801_001.png</code> → <code style="color:var(--accent2)">3801_mosaic.png</code>
+    </div>
+  </div>
+
+  <!-- 통계 -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">변경 완료</div>
+      <div class="stat-value" id="renamed-count" style="color: var(--accent2);">0</div>
+      <div class="stat-sub">이번 세션</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">감시 상태</div>
+      <div class="stat-value" id="watch-status" style="font-size:18px; color: var(--muted);">대기</div>
+      <div class="stat-sub" id="watch-dir-label">폴더 미설정</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">다음 번호</div>
+      <div class="stat-value" id="next-num" style="color: var(--accent3);">-</div>
+      <div class="stat-sub">startNum + 변경수</div>
+    </div>
+  </div>
+
+  <!-- 규칙 설정 -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">규칙 설정</div>
+    </div>
+    <div class="panel-body">
+      <div class="field">
+        <label>감시 폴더 경로</label>
+        <input id="inp-dir" type="text" placeholder="예: C:\Users\wlgjs\Desktop\rename_watch">
+        <div class="hint">이 폴더에 이미지가 추가되면 자동으로 파일명을 변경해요.</div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>시작 번호 (startNum)</label>
+          <input id="inp-start" type="number" placeholder="예: 3801" value="1">
+          <div class="hint">클립스튜디오 파일명의 앞 번호</div>
+        </div>
+        <div class="field">
+          <label>출력 패턴</label>
+          <input id="inp-pattern" type="text" placeholder="예: {n}_mosaic" value="{n}_mosaic">
+          <div class="hint"><code>{n}</code> = startNum + 시퀀스 - 1</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>시퀀스 추출 정규식</label>
+        <input id="inp-regex" type="text" placeholder="예: _([0-9]+)$" value="_([0-9]+)$">
+        <div class="hint">파일명에서 시퀀스 번호를 뽑는 정규식. 첫 번째 캡처 그룹이 시퀀스로 쓰여요.</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="applyConfig()">감시 시작</button>
+        <button class="btn btn-danger"  onclick="stopWatch()">중지</button>
+      </div>
+    </div>
+
+    <!-- 미리보기 -->
+    <div class="preview-box" id="preview-box">
+      미리보기: 규칙을 입력하면 변환 예시를 보여줘요.
+    </div>
+  </div>
+
+  <!-- 로그 -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">실시간 로그</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="status-dot" id="status-dot"></div>
+        <button class="btn btn-ghost" onclick="clearLog()" style="padding:6px 14px; font-size:11px;">초기화</button>
+      </div>
+    </div>
+    <div class="log-box" id="log-box">
+      <div class="log-line">서버 연결 중...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let lastLogLen = 0
+  let lastWatching = null
+
+  function updatePreview() {
+    const start   = parseInt(document.getElementById('inp-start').value) || 1
+    const pattern = document.getElementById('inp-pattern').value || '{n}_mosaic'
+    const regex   = document.getElementById('inp-regex').value || '_([0-9]+)$'
+
+    const examples = [
+      { seq: 1, fname: `example_001.png` },
+      { seq: 2, fname: `example_002.png` },
+      { seq: 3, fname: `example_003.png` },
+    ]
+
+    let html = ''
+    for (const ex of examples) {
+      const n       = start + ex.seq - 1
+      const out     = pattern.replace('{n}', n) + '.png'
+      html += `${ex.fname}  →  <span>${out}</span><br>`
+    }
+    document.getElementById('preview-box').innerHTML = html
+  }
+
+  async function applyConfig() {
+    const body = {
+      watchDir:      document.getElementById('inp-dir').value,
+      startNum:      document.getElementById('inp-start').value,
+      outputPattern: document.getElementById('inp-pattern').value,
+      seqRegex:      document.getElementById('inp-regex').value,
+    }
+    try {
+      const res  = await fetch('/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const data = await res.json()
+      if (!data.success) alert('감시 시작 실패 — 폴더 경로를 확인해주세요.')
+    } catch (e) {
+      alert('서버 연결 실패')
+    }
+  }
+
+  async function stopWatch() {
+    await fetch('/stop', { method: 'POST' })
+  }
+
+  async function clearLog() {
+    await fetch('/clear', { method: 'POST' })
+    lastLogLen = 0
+    document.getElementById('log-box').innerHTML = ''
+  }
+
+  async function fetchStatus() {
+    try {
+      const res  = await fetch('/status')
+      const data = await res.json()
+
+      document.getElementById('renamed-count').textContent = data.renamedCount
+
+      const nextNum = (data.config.startNum || 1) + data.renamedCount
+      document.getElementById('next-num').textContent = nextNum
+
+      const dot  = document.getElementById('status-dot')
+      const wStat = document.getElementById('watch-status')
+      if (data.watching) {
+        dot.classList.add('active')
+        wStat.textContent = '감시 중'
+        wStat.style.color = 'var(--accent2)'
+      } else {
+        dot.classList.remove('active')
+        wStat.textContent = '대기'
+        wStat.style.color = 'var(--muted)'
+      }
+
+      document.getElementById('watch-dir-label').textContent =
+        data.config.watchDir || '폴더 미설정'
+
+      if (data.logs.length !== lastLogLen) {
+        lastLogLen = data.logs.length
+        const logBox = document.getElementById('log-box')
+        logBox.innerHTML = data.logs.map(entry => {
+          const cls = 'log-line' + (entry.type ? ' ' + entry.type : '')
+          return `<div class="${cls}">${entry.text}</div>`
+        }).join('')
+      }
+
+      if (data.watching !== lastWatching) {
+        lastWatching = data.watching
+        if (data.config.watchDir) {
+          document.getElementById('inp-dir').value     = data.config.watchDir
+          document.getElementById('inp-start').value   = data.config.startNum
+          document.getElementById('inp-pattern').value = data.config.outputPattern
+          document.getElementById('inp-regex').value   = data.config.seqRegex
+        }
+      }
+    } catch (e) {
+      document.getElementById('log-box').innerHTML =
+        '<div class="log-line error">서버 연결 실패 — node server.js 실행 중인지 확인해주세요.</div>'
+    }
+  }
+
+  // 입력값 바뀔 때마다 미리보기 갱신
+  ['inp-start', 'inp-pattern', 'inp-regex'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePreview)
+  })
+
+  updatePreview()
+  fetchStatus()
+  setInterval(fetchStatus, 2000)
+</script>
+</body>
+</html>

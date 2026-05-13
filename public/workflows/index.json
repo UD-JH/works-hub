@@ -2,10 +2,14 @@
   "workflows": [
     {
       "id": "wf-1772982601430",
+      "schemaVersion": 1,
       "name": "파일명 변경",
       "desc": "폴더 열기 → 이미지 선택 → 파일명 변경 → 다운로드",
       "color": "#6c63ff",
-      "updatedAt": "방금",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z",
+      "lastRunAt": null,
+      "lastRunStatus": null,
       "nodes": [
         {
           "id": "node_1",
@@ -41,6 +45,71 @@
           "modId": "download",
           "x": 713,
           "y": 127.5,
+          "params": {
+            "filename": "output"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "from": "node_1",
+          "to": "node_2"
+        },
+        {
+          "from": "node_2",
+          "to": "node_3"
+        },
+        {
+          "from": "node_3",
+          "to": "node_4"
+        }
+      ]
+    },
+    {
+      "id": "wf-1776325106631",
+      "schemaVersion": 1,
+      "name": "test",
+      "desc": "폴더 열기 → 이미지 선택 → 파일명 변경 → 다운로드",
+      "color": "#6c63ff",
+      "createdAt": "2026-04-16T07:38:26.631Z",
+      "updatedAt": "2026-04-16T07:38:26.631Z",
+      "lastRunAt": null,
+      "lastRunStatus": null,
+      "nodes": [
+        {
+          "id": "node_1",
+          "modId": "folder-open",
+          "x": -1,
+          "y": 118.39999771118164,
+          "params": {
+            "accept": "*"
+          }
+        },
+        {
+          "id": "node_2",
+          "modId": "image-select",
+          "x": 213,
+          "y": 172.39999771118164,
+          "params": {
+            "extensions": "jpg,png,webp,gif"
+          }
+        },
+        {
+          "id": "node_3",
+          "modId": "rename",
+          "x": 420,
+          "y": 221.39999771118164,
+          "params": {
+            "pattern": "IMG_{n}",
+            "start": "1",
+            "padding": "3"
+          }
+        },
+        {
+          "id": "node_4",
+          "modId": "download",
+          "x": 790,
+          "y": 261.39999771118164,
           "params": {
             "filename": "output"
           }
